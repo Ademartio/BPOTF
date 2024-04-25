@@ -7,6 +7,7 @@ from qecsim import paulitools as pt
 import networkx as nt
 from copy import deepcopy
 from ldpc import bposd_decoder
+import rustworkx as rw
 
 def error_generation(p, n):
     """Depolarizing error generation
@@ -59,7 +60,7 @@ def kruskal_on_hypergraph(Hog):
             
      """
      
-    initial_graph = nt.Graph()
+    initial_graph = rw.PyGraph()
     rows, columns = Hog.shape
     column_to_square = np.zeros(rows)
     
@@ -83,37 +84,43 @@ def kruskal_on_hypergraph(Hog):
     # final_matrix = H[:, column_to_square]
     
     # We begin by adding the first column:
-    for edge in np.where(H[:,0] == 1)[0]:
-        initial_graph.add_edge(edge, rows+2)
-    
+    # for edge in np.where(H[:,0] == 1)[0]:
+    #     initial_graph.add_edge(edge, rows+2)
+    nodes_to_add = [i for i in range(rows+columns+2)]
+    initial_graph.add_nodes_from(nodes_to_add)
+    initial_graph.add_edges_from([(edge, rows+2, None) for edge in np.where(H[:,0] == 1)[0]])
     
     for i in range(1,columns):
-        # column_to_consider = H[:,i]
         
-        Graph_to_check = deepcopy(initial_graph)
-        # edges_to_add = []
+        # Graph_to_check = deepcopy(initial_graph)
+        edges_to_add = []
+        edges_to_remove = []
         for edge in np.where(H[:,i] == 1)[0]:
-            # edges_to_add.append((edge, i+rows+2))
-            Graph_to_check.add_edge(edge, i+rows+2)
-        # initial_graph.add_edges_from(edges_to_add)
-        # if len(list(nt.simple_cycles(initial_graph))) > 0:
-        # if len(list(nt.cycle_basis(Graph_to_check))) > 0:
-        #     # initial_graph.remove_edges_from(edges_to_add)
+            edges_to_add.append((edge, i+rows+2,None))
+            edges_to_remove.append((edge, i+rows+2))
+            # Graph_to_check.add_edge(edge, i+rows+2)
+        initial_graph.add_edges_from(edges_to_add)
+        # try: 
+        #     rw.cycle_basis(initial_graph)
+        #     initial_graph.remove_edges_from(edges_to_add)
         #     continue
-        # initial_graph = Graph_to_check
-        # column_to_square[column_number] = i
-        # column_number += 1
-        # if column_number == rows:
-        #     break
-        try: 
-            nt.find_cycle(Graph_to_check)
+        # except Exception:
+        #     # initial_graph = Graph_to_check
+        #     column_to_square[column_number] = i
+        #     column_number += 1
+        #     if column_number == rows:
+        #         break
+        
+        
+        if len(list(rw.cycle_basis(initial_graph))) > 0:
+        # if len(list(nt.cycle_basis(Graph_to_check))) > 0:
+            initial_graph.remove_edges_from(edges_to_remove)
             continue
-        except Exception:
-            initial_graph = Graph_to_check
-            column_to_square[column_number] = i
-            column_number += 1
-            if column_number == rows:
-                break
+        # initial_graph = Graph_to_check
+        column_to_square[column_number] = i
+        column_number += 1
+        if column_number == rows:
+            break
     
 
     assert column_to_square[-1] != 0, " Ha habido un error, no ha encontrado n-k columnas independientes"
@@ -169,8 +176,6 @@ if __name__ == "__main__":
             
             for iteration in range(NMCs[index]):
                 error = error_generation(p, myCode.n_k_d[0])
-                # error = np.zeros(myCode.n_k_d[0]*2, dtype = int)
-                # error[3] = 1
                 syndrome = pt.bsp(error, myCode.stabilizers.T)
                 # syndrome = pt.bsp(error, pcm.T)
                 # BPOSD decoder
