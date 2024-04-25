@@ -153,6 +153,7 @@ if __name__ == "__main__":
         PlsBP[distance] = []
         PlsBPBP[distance] = []
         PlsBPOSD[distance] = []
+        print('\n')
         print(f'Distance: {distance}')
         print('-------------------------------------------------')
         for index, p in enumerate(ps):
@@ -232,3 +233,4 @@ if __name__ == "__main__":
             print(f'Error BP: {PlBP}')
             print(f'Error BPOSD: {PlBPOSD}')
             print(f'Error BPBP: {PlBPBP}')
+            print('\n')
