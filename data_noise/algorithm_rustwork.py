@@ -42,29 +42,19 @@ def order_matrix_by_vector(vector, matrix):
 
 def kruskal_on_hypergraph(Hog):
     """
-    We now need to produce the Tanner graph via nt.graph
+    We use rustworkx in order to find the minimum weight 
 
-    In contination follow the following route:
-    1 add first hyperedge to the graph as different hyperedges
-    2 initiate following loop:
-    initial_graph = nt.graph()
-    for column in H:
-        graph_to_try = initial_graph.copy()
-        for i in np.where(H[:,column]==0):
-            graph_to_try.add_edge((i+H.shape[1],column))
-        if graph_to_try.has_loops():
-            continue
-        else:
-            initial_graph = graph_to_try.copy()
-            # Checkear que no hayan ya más de n-k columnas
-            
-     """
+    Args:
+        Hog (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
      
     initial_graph = rw.PyGraph()
     rows, columns = Hog.shape
     column_to_square = np.zeros(rows)
     
-    # Just before initializing the process we introduce two additional rows on H, introducing virtual checks.
     zeros_rows = np.zeros((2, columns))
     H =  np.vstack((Hog, zeros_rows))
     
@@ -78,14 +68,7 @@ def kruskal_on_hypergraph(Hog):
                 
     
     column_number = 1
-    # Rows (Checks) are numbers 0 to rows-1
-    # Columns (hypergraphs) are numbers rows-1 to rows+columns-1
-    # column_to_square is a vector with the columns that will be considered for the square matrix:
-    # final_matrix = H[:, column_to_square]
     
-    # We begin by adding the first column:
-    # for edge in np.where(H[:,0] == 1)[0]:
-    #     initial_graph.add_edge(edge, rows+2)
     nodes_to_add = [i for i in range(rows+columns+2)]
     initial_graph.add_nodes_from(nodes_to_add)
     initial_graph.add_edges_from([(edge, rows+2, None) for edge in np.where(H[:,0] == 1)[0]])
