@@ -42,10 +42,10 @@ def order_matrix_by_vector(vector, matrix):
 
 def kruskal_on_hypergraph(Hog):
     """
-    We use rustworkx in order to find the minimum weight 
+    We use rustworkx in order to find the minimum weight spanning graph.
 
     Args:
-        Hog (_type_): _description_
+        Hog (np.ndarray): This is the parity check matrix ordered where the most relevant edges are considered first.
 
     Returns:
         _type_: _description_
@@ -60,8 +60,9 @@ def kruskal_on_hypergraph(Hog):
     
     
     for i in range(columns):
-        if len(np.where(H[:,i] == 1)[0]) == 1:
-            if np.where(H[:,i] == 1)[0][0] < rows:
+        ones_in_col = np.where(H[:,i] == 1)[0]
+        if len(ones_in_col) == 1:
+            if ones_in_col[0] < rows//2:
                 H[-2,i] = 1
             else:
                 H[-1,i] = 1
