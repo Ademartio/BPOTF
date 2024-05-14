@@ -73,7 +73,7 @@ class UF:
         # Empezamos el cluster
         cluster_array = self.SetCluster()
         # La siguiente columna  indica qué columnas nos quedaremos como árbol.
-        columns_chosen = np.zeros(self.columns, dtype = int)
+        columns_chosen = np.zeros(self.columns, dtype = bool)
         # Iteramos sobre todas las columnas de la matriz self.Hog
         for column in range(self.columns):
             # Checker nos sirve para ever que checks coge cada evento.
@@ -108,7 +108,7 @@ class UF:
                 if  depths[2] == 1:
                     cluster_array[depths[0]][1] += 1
         # La siguiente lista nos indica qué columnas han sido elegidas.
-        indices_columns_chosen = np.where(columns_chosen==1)[0]
+        indices_columns_chosen = np.where(columns_chosen==True)[0]
         # returned_H = H_sorted[:-2,indices_columns_chosen]
         # new_rows, new_cols = returned_H.shape
         # if new_rows >= new_cols:
@@ -141,7 +141,7 @@ class UF:
         second_recovered_error = self._bpd2.decode(syndrome)
         if not self._bpd2.converge:
             print('Main error')
-        
+
         
         return second_recovered_error, average_time
     
