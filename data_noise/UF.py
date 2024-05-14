@@ -27,7 +27,7 @@ class UF:
         self.rows = H.shape[0]
         self.columns = H.shape[1]
         
-        self.Hog = copy.deepcopy(self.H)
+        self.Hog = copy.deepcopy(self.H).astype(np.uint8)
         
         zeros_rows = np.zeros((2, self.columns))
         self.Hog =  np.vstack((self.Hog, zeros_rows))
@@ -105,7 +105,7 @@ class UF:
                 for element in non_trivial_checker:
                     cluster_array[element,0] = depths[0]
                 columns_chosen[sorted_indices[column]] = True
-                if  depths[2] == 1:
+                if  depths[2]:
                     cluster_array[depths[0]][1] += 1
         # La siguiente lista nos indica qué columnas han sido elegidas.
         indices_columns_chosen = np.where(columns_chosen==True)[0]
@@ -139,8 +139,8 @@ class UF:
         self._bpd2.update_channel_probs(updated_probs)
         # Luego le damos a decode.
         second_recovered_error = self._bpd2.decode(syndrome)
-        if not self._bpd2.converge:
-            print('Main error')
+        # if not self._bpd2.converge:
+        #     print('Main error')
 
         
         return second_recovered_error, average_time
