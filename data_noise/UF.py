@@ -104,7 +104,7 @@ class UF:
                 non_trivial_checker = np.where(checker == 1)[0]
                 for element in non_trivial_checker:
                     cluster_array[element,0] = depths[0]
-                columns_chosen[sorted_indices[column]] = 1
+                columns_chosen[sorted_indices[column]] = True
                 if  depths[2] == 1:
                     cluster_array[depths[0]][1] += 1
         # La siguiente lista nos indica qué columnas han sido elegidas.

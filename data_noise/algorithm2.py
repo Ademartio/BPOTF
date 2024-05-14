@@ -130,8 +130,8 @@ def kruskal_on_hypergraph(Hog):
         
     
 if __name__ == "__main__":
-    # distances = [3]
     distances = [3]
+    # distances = [11]
     NMCs = [10**4, 10**4, 10**4, 10**4, 10**4, 10**4, 10**4, 10**4, 10**4, 10**3, 10**3, 10**3, 10**3]
     ps = np.linspace(0.01, 0.13, num=13)
     PlsBP = {}
