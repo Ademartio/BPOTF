@@ -14,10 +14,12 @@ class UF:
                  ):
         self.H = H
         self.p = p
+        # Para hacer el primer BP
         self._bpd = bp_decoder(
             H,
             error_rate = p
         )
+        # Para hacer el segundo BP
         self._bpd2 = bp_decoder(
             H,
             error_rate = p
@@ -68,26 +70,36 @@ class UF:
     #     pass
     
     def Kruskal_hypergraph(self, sorted_indices: np.ndarray):
+        # Empezamos el cluster
         cluster_array = self.SetCluster()
+        # La siguiente columna  indica qué columnas nos quedaremos como árbol.
         columns_chosen = np.zeros(self.columns, dtype = int)
+        # Iteramos sobre todas las columnas de la matriz self.Hog
         for column in range(self.columns):
             # Checker nos sirve para ever que checks coge cada evento.
-            
             checker = np.zeros(self.rows+2, dtype = int)
             # Depths: (root, depth, boolean about increasing tree size)
             depths = [0, -1, False]
             boolean_condition = True
+            # Miramos para la columna "sorted_indices[column]]" de la matriz "self.Hog", que filas son no triviales.
             non_trivial_elements_in_column = np.where(self.Hog[:,sorted_indices[column]]==1)[0]
+            # Las siguientes lineas son el método Union Find que hablamos el otro día:
             for non_trivial_element in non_trivial_elements_in_column:
+                # Miramos la raiz y la profundidad del árbol al que corresponden.
                 root, depth = self.Find(non_trivial_element, cluster_array)
+                # Si otro valor no trivial te lleva a ese árbol omitimos la columna.
                 if checker[root] == 1:
                     boolean_condition = False
                     break
+                # Si no lo apuntamos en el checker.
                 checker[root] = 1
+                # Mantenemos el root de profundida más grande.
                 if depth > depths[1]:
                     depths = [root, depth, False]
+                # Si hay más de un árbol de profundidad máxima, la profundidad del árbol aumenta.
                 if depth == depths[1]:
                     depths[2] = True
+            # Si la hyperarista no ha incidido más de una vez a ningún árbol la añadimos.
             if boolean_condition:
                 non_trivial_checker = np.where(checker == 1)[0]
                 for element in non_trivial_checker:
@@ -95,6 +107,7 @@ class UF:
                 columns_chosen[sorted_indices[column]] = 1
                 if  depths[2] == 1:
                     cluster_array[depths[0]][1] += 1
+        # La siguiente lista nos indica qué columnas han sido elegidas.
         indices_columns_chosen = np.where(columns_chosen==1)[0]
         # returned_H = H_sorted[:-2,indices_columns_chosen]
         # new_rows, new_cols = returned_H.shape
@@ -104,31 +117,31 @@ class UF:
                 
     def decode(self, syndrome : np.array):
         
+        # Usamos el primer BP para encontrar el error.
         recovered_error = self._bpd.decode(syndrome)
-        
+        # Si converge devolvemos el error.
         if self._bpd.converge:
             return recovered_error, 0
-        
+        # Si no converge, nos quedamos con las llrs.
         llrs = self._bpd.log_prob_ratios
+        # Ordenamos las llrs y nos quedamos con los indices por orden
         sorted_indices = self.sort_matrix(llrs)
         a = time.perf_counter()
+        # Nos quedamos con las columnas linearmente independientes.
         columns_chosen = self.Kruskal_hypergraph(sorted_indices)
         b = time.perf_counter()
         average_time = b-a
-        # _bpd_squared = bp_decoder(
-        #     H_squared,
-        #     error_rate=self.p,
-        # )
+        # Para no tener que iniciar de nuevo una clase bp_decoder, usamos self._bp2.
+        # Para que tenga en cuenta solo las columnas que nos interesan, lo iniciamos, le damos probabilidad 0 a las columnas que no usamos 
+        # y probabilidad self.p a las que sí.
         updated_probs = np.zeros(self.columns)
         updated_probs[columns_chosen] = self.p
         self._bpd2.update_channel_probs(updated_probs)
+        # Luego le damos a decode.
         second_recovered_error = self._bpd2.decode(syndrome)
         if not self._bpd2.converge:
             print('Main error')
-        # self._bpd.update_channel_probs(np.full(self.columns, self.p))
-        # non_trivials = sorted_indices[columns_chosen[np.where(second_recovered_error == 1)[0]].astype(int)]
-        # second_recovered_error_n = np.zeros(self.columns, dtype = bool)
-        # second_recovered_error_n[non_trivials] = True
+        
         
         return second_recovered_error, average_time
     
