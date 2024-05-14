@@ -131,7 +131,7 @@ def kruskal_on_hypergraph(Hog):
     
 if __name__ == "__main__":
     # distances = [3]
-    distances = [3,5, 7, 9]
+    distances = [3]
     NMCs = [10**4, 10**4, 10**4, 10**4, 10**4, 10**4, 10**4, 10**4, 10**4, 10**3, 10**3, 10**3, 10**3]
     ps = np.linspace(0.01, 0.13, num=13)
     PlsBP = {}
@@ -175,6 +175,7 @@ if __name__ == "__main__":
             PlBPOSD = 0
             time_av_BPOSD = 0
             time_av_BPBP = 0
+            kruskal_time_list = []
             
             for iteration in range(NMCs[index]):
                 error = error_generation(p, myCode.n_k_d[0])
@@ -190,14 +191,14 @@ if __name__ == "__main__":
                 time_av_BPOSD += (b-a)/NMCs[index]
                 recovered_error = _bp.decode(syndrome)
                 a = time.time()
-                recovered_error_BPBP = _uf.decode(syndrome)
+                recovered_error_BPBP, kruskal_time = _uf.decode(syndrome)
                 b = time.time()
                 time_av_BPBP += (b-a)/NMCs[index]
                 
-                if np.any(pt.bsp(recovered_error_BPBP ^ error, myCode.logicals.T) == 1):
+                if np.any(pt.bsp(recovered_error_BPOSD ^ error, myCode.logicals.T) == 1):
                     PlBPOSD += 1/NMCs[index]
                     
-                if np.any(pt.bsp(recovered_error_BPOSD ^ error, myCode.logicals.T) == 1):
+                if np.any(pt.bsp(recovered_error_BPBP ^ error, myCode.logicals.T) == 1):
                     PlBPBP += 1/NMCs[index]
                 #----------------------------
                 
@@ -208,7 +209,8 @@ if __name__ == "__main__":
                 else:
                     PlBP += 1/NMCs[index]
 
-                
+                if kruskal_time > 0:
+                    kruskal_time_list.append(kruskal_time)
                 
             
             PlsBP[distance].append(PlBP)
@@ -219,3 +221,6 @@ if __name__ == "__main__":
             print(f'Error BP: {PlBP}')
             print(f'Error BPOSD: {PlBPOSD} with average time {time_av_BPOSD}')
             print(f'Error BPBP: {PlBPBP} with average time {time_av_BPBP}')
+            if len(kruskal_time_list) > 0:
+                print(f'Average Kruskal time {sum(kruskal_time_list)/len(kruskal_time_list)}')
+            print('\n')

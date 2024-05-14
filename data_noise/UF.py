@@ -1,7 +1,7 @@
 import numpy as np
 from ldpc import bp_decoder
 import copy
-
+import time
 
 
 
@@ -15,6 +15,10 @@ class UF:
         self.H = H
         self.p = p
         self._bpd = bp_decoder(
+            H,
+            error_rate = p
+        )
+        self._bpd2 = bp_decoder(
             H,
             error_rate = p
         )
@@ -51,8 +55,9 @@ class UF:
     
     def sort_matrix(self, llrs):
         sorted_indices = np.argsort(llrs)
-        H_sorted = self.Hog[:,sorted_indices]
-        return H_sorted, sorted_indices
+        # H_sorted = self.Hog[:,sorted_indices]
+        # return H_sorted, sorted_indices
+        return  sorted_indices
     
     def Find(self, x :int, cluster_array = np.array):
         while x != cluster_array[x,0]:
@@ -62,16 +67,17 @@ class UF:
     # def Union(self, elements:list):
     #     pass
     
-    def Kruskal_hypergraph(self, H_sorted: np.ndarray):
+    def Kruskal_hypergraph(self, sorted_indices: np.ndarray):
         cluster_array = self.SetCluster()
         columns_chosen = np.zeros(self.columns, dtype = int)
         for column in range(self.columns):
             # Checker nos sirve para ever que checks coge cada evento.
+            
             checker = np.zeros(self.rows+2, dtype = int)
             # Depths: (root, depth, boolean about increasing tree size)
-            depths = [0, -1, 0]
+            depths = [0, -1, False]
             boolean_condition = True
-            non_trivial_elements_in_column = np.where(H_sorted[:,column]==1)[0]
+            non_trivial_elements_in_column = np.where(self.Hog[:,sorted_indices[column]]==1)[0]
             for non_trivial_element in non_trivial_elements_in_column:
                 root, depth = self.Find(non_trivial_element, cluster_array)
                 if checker[root] == 1:
@@ -79,47 +85,52 @@ class UF:
                     break
                 checker[root] = 1
                 if depth > depths[1]:
-                    depths = [root, depth, 0]
+                    depths = [root, depth, False]
                 if depth == depths[1]:
-                    depths[2] = 1
+                    depths[2] = True
             if boolean_condition:
                 non_trivial_checker = np.where(checker == 1)[0]
                 for element in non_trivial_checker:
                     cluster_array[element,0] = depths[0]
-                columns_chosen[column] = 1
+                columns_chosen[sorted_indices[column]] = 1
                 if  depths[2] == 1:
                     cluster_array[depths[0]][1] += 1
         indices_columns_chosen = np.where(columns_chosen==1)[0]
-        returned_H = H_sorted[:-2,indices_columns_chosen]
-        new_rows, new_cols = returned_H.shape
-        if new_rows >= new_cols:
-            returned_H = np.hstack((returned_H,np.zeros((new_cols, new_rows-new_cols+1))))
-        return returned_H, indices_columns_chosen
+        # returned_H = H_sorted[:-2,indices_columns_chosen]
+        # new_rows, new_cols = returned_H.shape
+        # if new_rows >= new_cols:
+        #     returned_H = np.hstack((returned_H,np.zeros((new_cols, new_rows-new_cols+1))))
+        return indices_columns_chosen
                 
     def decode(self, syndrome : np.array):
         
         recovered_error = self._bpd.decode(syndrome)
         
         if self._bpd.converge:
-            return recovered_error
+            return recovered_error, 0
         
         llrs = self._bpd.log_prob_ratios
-        H_sorted, sorted_indices = self.sort_matrix(llrs)
-        H_squared, columns_chosen = self.Kruskal_hypergraph(H_sorted)
-        
-        _bpd_squared = bp_decoder(
-            H_squared,
-            error_rate=self.p,
-        )
-        
-        second_recovered_error = _bpd_squared.decode(syndrome)
-        if not _bpd_squared.converge:
+        sorted_indices = self.sort_matrix(llrs)
+        a = time.perf_counter()
+        columns_chosen = self.Kruskal_hypergraph(sorted_indices)
+        b = time.perf_counter()
+        average_time = b-a
+        # _bpd_squared = bp_decoder(
+        #     H_squared,
+        #     error_rate=self.p,
+        # )
+        updated_probs = np.zeros(self.columns)
+        updated_probs[columns_chosen] = self.p
+        self._bpd2.update_channel_probs(updated_probs)
+        second_recovered_error = self._bpd2.decode(syndrome)
+        if not self._bpd2.converge:
             print('Main error')
-        non_trivials = sorted_indices[columns_chosen[np.where(second_recovered_error == 1)[0]].astype(int)]
-        second_recovered_error_n = np.zeros(self.columns, dtype = bool)
-        second_recovered_error_n[non_trivials] = True
+        # self._bpd.update_channel_probs(np.full(self.columns, self.p))
+        # non_trivials = sorted_indices[columns_chosen[np.where(second_recovered_error == 1)[0]].astype(int)]
+        # second_recovered_error_n = np.zeros(self.columns, dtype = bool)
+        # second_recovered_error_n[non_trivials] = True
         
-        return second_recovered_error_n
+        return second_recovered_error, average_time
     
     
     
