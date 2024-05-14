@@ -31,7 +31,7 @@ class UF:
         
         zeros_rows = np.zeros((2, self.columns))
         self.Hog =  np.vstack((self.Hog, zeros_rows))
-        self.Hog = self.Hog.astype(int)
+        # self.Hog = self.Hog.astype(int)
         
         # We add virtual checks so all columns have at least two non-trivial elements.
         for i in range(self.columns):
