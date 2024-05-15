@@ -41,7 +41,18 @@ class UF:
                     self.Hog[-2,i] = 1
                 else:
                     self.Hog[-1,i] = 1
-    
+        # Definimos el número máximo de índices por columna
+        max_nontrivial_per_col = np.max(np.sum(self.Hog == 1, axis=0))
+        # Definimos la matriz de índices. Cuando un valor es -1, es que ya no está incluido.
+        self.index_matrix = np.full((max_nontrivial_per_col, self.columns), -1, dtype=np.uint8)
+        
+        for column in range(self.columns):
+            # Get the row indices where the value is 1 in the current column
+            row_indices = np.where(self.Hog[:, column] == 1)[0]
+            # Place these indices in the corresponding column of index_matrix
+            self.index_matrix[:len(row_indices), column] = row_indices
+        
+        
     def SetCluster(self):
         """Set the clusters which will be grown via Union Find.
 
@@ -77,22 +88,22 @@ class UF:
         # Iteramos sobre todas las columnas de la matriz self.Hog
         for column in range(self.columns):
             # Checker nos sirve para ever que checks coge cada evento.
-            checker = np.zeros(self.rows+2, dtype = int)
+            checker = np.zeros(self.rows+2, dtype = bool)
             # Depths: (root, depth, boolean about increasing tree size)
             depths = [0, -1, False]
             boolean_condition = True
             # Miramos para la columna "sorted_indices[column]]" de la matriz "self.Hog", que filas son no triviales.
-            non_trivial_elements_in_column = np.where(self.Hog[:,sorted_indices[column]]==1)[0]
+            non_trivial_elements_in_column = self.index_matrix[:,sorted_indices[column]]
             # Las siguientes lineas son el método Union Find que hablamos el otro día:
             for non_trivial_element in non_trivial_elements_in_column:
                 # Miramos la raiz y la profundidad del árbol al que corresponden.
                 root, depth = self.Find(non_trivial_element, cluster_array)
                 # Si otro valor no trivial te lleva a ese árbol omitimos la columna.
-                if checker[root] == 1:
+                if checker[root]:
                     boolean_condition = False
                     break
                 # Si no lo apuntamos en el checker.
-                checker[root] = 1
+                checker[root] = True
                 # Mantenemos el root de profundida más grande.
                 if depth > depths[1]:
                     depths = [root, depth, False]
