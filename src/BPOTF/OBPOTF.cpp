@@ -14,16 +14,32 @@
 #include <numeric>
 #include <span>
 #include <iostream>
+#include <chrono>
 
 #include <pybind11/embed.h>
 
 #include "OBPOTF.h"
+#include "DisjointSet/DisjointSet.h"
 
 using namespace py::literals;
 
 /***********************************************************************************************************************
- * Private functions
+ * Helper functions
  **********************************************************************************************************************/
+std::chrono::_V2::system_clock::time_point start, stop;
+void startExecTime()
+{
+   start = std::chrono::high_resolution_clock::now();
+}
+
+void finishExecTime(std::string label)
+{
+   auto stop = std::chrono::high_resolution_clock::now();
+   double exec_time = std::chrono::duration_cast<std::chrono::nanoseconds>(stop-start).count();
+   exec_time *= 1e-9;
+   std::cout << "Execution time for \"" << label << "\" is: " << exec_time << std::endl;
+}
+
 
 // helper function to avoid making a copy when returning a py::array_t
 // author: https://github.com/YannickJadoul
@@ -65,6 +81,7 @@ inline static std::span<T> toSpan2D(py::array_t<T, py::array::f_style> const & p
 
 OBPOTF::OBPOTF(py::array_t<uint8_t, py::array::f_style> const & au8_pcm, 
                float const & p)
+:m_p(p)
 {
    py::buffer_info py_pcm_bufinfo = au8_pcm.request();
 
@@ -90,21 +107,21 @@ OBPOTF::OBPOTF(py::array_t<uint8_t, py::array::f_style> const & au8_pcm,
    // Iterate through the pcm to get the non-trivial row indexes and maximum number of nt per column.
    for (uint64_t u64_c_idx = 0UL; u64_c_idx < m_u64_pcm_cols; u64_c_idx++)
    {
-      uint8_t u8_count = 0U;
+      uint16_t u16_count = 0U;
       std::vector<int64_t> ai64_curr_col;
       for (uint64_t u64_r_idx = 0UL; u64_r_idx < m_u64_pcm_rows; u64_r_idx++)
       {
          uint64_t u64_eff_idx = (u64_c_idx * m_u64_pcm_rows) + u64_r_idx;
          if (au8_pcm_sp[u64_eff_idx] == 1U)
          {
-            u8_count++;
+            u16_count++;
             ai64_curr_col.push_back(u64_r_idx);
          }
       }
       
-      if (u8_count == 1U)
+      if (u16_count == 1U)
       {
-         if (u8_count < m_u64_pcm_rows / 2) // Take advantage of the integer division truncation.
+         if (u16_count < m_u64_pcm_rows / 2) // Take advantage of the integer division truncation.
          {
             ai64_curr_col.push_back(m_u64_pcm_rows+1);
          }
@@ -115,9 +132,9 @@ OBPOTF::OBPOTF(py::array_t<uint8_t, py::array::f_style> const & au8_pcm,
       }
       aai64_temp_vec.push_back(ai64_curr_col);
 
-      if (u8_count > m_u16_idx_matrix_rows)
+      if (u16_count > m_u16_idx_matrix_rows)
       {
-         m_u16_idx_matrix_rows = u8_count;
+         m_u16_idx_matrix_rows = u16_count;
       }
    }
 
@@ -134,6 +151,7 @@ OBPOTF::OBPOTF(py::array_t<uint8_t, py::array::f_style> const & au8_pcm,
    // Initialize the ldpc bp python object
    py::object bp_decoder = py::module_::import("ldpc").attr("bp_decoder");
    m_bpd = bp_decoder(au8_pcm, "error_rate"_a=p);
+   m_bpd_secondary = bp_decoder(au8_pcm, "error_rate"_a=p);
 }
 
 void OBPOTF::print_object(void)
@@ -155,5 +173,193 @@ void OBPOTF::print_object(void)
       std::cout << m_au64_index_array[u64_idx] << " ";
    std::cout << std::endl;
 
+}
 
+py::array_t<uint8_t> OBPOTF::decode(py::array_t<int, py::array::c_style> syndrome, double & exec_time)
+{
+   std::string label("First decode");
+   startExecTime();
+   py::array_t<uint8_t> py_recovered_err = m_bpd.attr("decode")(syndrome);
+   finishExecTime(label);
+   
+   label = "Converge";
+   startExecTime();
+   int py_converge = m_bpd.attr("converge").cast<int>();
+   finishExecTime(label);
+
+   if (py_converge != 1)
+   {
+      //std::cout << "No converge!\n";
+      label = "log_prob_ratios";
+      startExecTime();
+      py::array_t<double> llrs = m_bpd.attr("log_prob_ratios").cast<py::array_t<double>>();
+      finishExecTime(label);
+
+      //std::vector<uint64_t> columns_chosen = koh_v2_classical_uf(llrs);
+      label = "uf-kruskal";
+      startExecTime();
+      std::vector<uint64_t> columns_chosen = koh_v2_uf(llrs);
+      finishExecTime(label);
+
+      label = "generate updated_probs";
+      startExecTime();
+      std::vector<float> updated_probs(m_u64_pcm_cols, 0);
+      for (uint64_t u64_idx = 0U; u64_idx < columns_chosen.size(); u64_idx++)
+         updated_probs[columns_chosen[u64_idx]] = m_p;
+      py::array_t<float> py_updated_probs = as_pyarray(std::move(updated_probs));
+      finishExecTime(label);
+
+      label = "set updated_probs";
+      startExecTime();
+      //py::array_t<double> & pyref_channel_probs = m_bpd_secondary.attr("channel_probs")().cast<py::array_t<double>>;
+      m_bpd_secondary.attr("update_channel_probs")(py_updated_probs);
+      finishExecTime(label);
+      label = "Second decode";
+      startExecTime();
+      py_recovered_err = m_bpd_secondary.attr("decode")(syndrome);
+      finishExecTime(label);
+   }
+
+   return py_recovered_err;
+}
+
+std::vector<uint64_t> OBPOTF::sort_indexes(py::array_t<double> const & llrs) 
+{
+   // COPY! Not happy...
+   std::vector<uint64_t> idx = m_au64_index_array;
+
+   std::sort(idx.begin(), idx.end(), 
+               [&llrs](size_t i1, size_t i2) 
+               {
+                  return std::less<double>{}(llrs.data()[i1], llrs.data()[i2]);
+               }
+            );
+
+   return idx;
+}
+
+std::vector<std::vector<uint64_t>::iterator> OBPOTF::sort_indexes_nc(py::array_t<double> const & llrs) 
+{
+   std::vector<std::vector<uint64_t>::iterator> idx(m_au64_index_array.size());
+   //std::iota(idx.begin(), idx.end(), m_au64_index_array.begin());
+   for (uint64_t u64_idx = 0U; u64_idx < idx.size(); u64_idx++)
+      idx[u64_idx] = m_au64_index_array.begin() + u64_idx;
+
+   std::sort(idx.begin(), idx.end(), 
+               [&llrs](std::vector<uint64_t>::iterator i1, std::vector<uint64_t>::iterator i2) 
+               {
+                  return std::less<double>{}(llrs.data()[*i1], llrs.data()[*i2]);
+               }
+            );
+
+   return idx;
+}
+
+std::vector<uint64_t> OBPOTF::koh_v2_classical_uf(py::array_t<double> const & llrs)
+{
+   uint16_t const & hog_rows = m_u16_idx_matrix_rows;
+   uint64_t const & hog_cols = m_u64_pcm_cols;
+   
+   std::vector<size_t> columns_chosen;
+   columns_chosen.reserve(hog_cols);
+
+   std::vector<uint64_t> sorted_idxs = sort_indexes(llrs);
+
+   DisjSet clstr_set = DisjSet(m_u64_pcm_rows+2);
+
+   for (size_t col_idx = 0UL; col_idx < sorted_idxs.size(); col_idx++)
+   {
+      size_t effective_col_idx = sorted_idxs[col_idx];
+      size_t col_offset = effective_col_idx * hog_rows;
+      std::span<ssize_t> column_sp(m_ai64_idx_matrix.data() + col_offset, hog_rows);
+
+      long int retcode = -1;
+      long int root_set = clstr_set.find(column_sp[0]);
+      for (size_t nt_elem_idx = 1UL; nt_elem_idx < column_sp.size(); nt_elem_idx++)
+      {
+         if (column_sp[nt_elem_idx] == -1L)
+            break;
+
+         retcode = clstr_set.set_union_opt(root_set, column_sp[nt_elem_idx]);
+         if (retcode == -1L)
+            break;
+         root_set = retcode;
+      }
+      if (retcode != -1L)
+      {
+         columns_chosen.push_back(effective_col_idx);
+         // if (columns_chosen.size() == rank)
+         //    break;
+      }
+   }
+
+   return columns_chosen;
+}
+
+std::vector<uint64_t> OBPOTF::koh_v2_uf(py::array_t<float> const & llrs)
+{
+   uint16_t const & hog_rows = m_u16_idx_matrix_rows;
+   uint64_t const & hog_cols = m_u64_pcm_cols;
+   
+   std::vector<uint64_t> columns_chosen;
+   columns_chosen.reserve(hog_cols);
+
+   //std::vector<uint64_t> sorted_idxs = sort_indexes(llrs);
+   std::vector<std::vector<uint64_t>::iterator> sorted_idxs = sort_indexes_nc(llrs);
+
+   DisjSet clstr_set = DisjSet(m_u64_pcm_rows+2); //+2 due to virtual checks
+
+   for (size_t col_idx = 0UL; col_idx < sorted_idxs.size(); col_idx++)
+   {
+      //size_t effective_col_idx = sorted_idxs[col_idx];
+      size_t effective_col_idx = *(sorted_idxs[col_idx]);
+      size_t col_offset = effective_col_idx * hog_rows;
+      std::span<ssize_t> column_sp(m_ai64_idx_matrix.data() + col_offset, hog_rows);
+      
+      std::vector<uint8_t> checker(m_u64_pcm_rows+2, 0);
+      std::vector<int> depths = {0, -1, 0};
+      bool boolean_condition = true;
+
+      for (size_t nt_elem_idx = 0UL; nt_elem_idx < column_sp.size(); nt_elem_idx++)
+      {
+         if (column_sp[nt_elem_idx] == -1L)
+            break;
+         int elem_root = clstr_set.find(column_sp[nt_elem_idx]);
+         int elem_depth = clstr_set.get_rank(elem_root);
+
+         if (checker[elem_root] == 1U)
+         {
+            boolean_condition = false;
+            break;
+         }
+         checker[elem_root] = 1U;
+
+         if (elem_depth > depths[1])
+         {
+            depths = {elem_root, elem_depth, 0};
+         }
+         if (elem_depth == depths[1])
+         {
+            depths[2] = 1;
+         }
+      }
+
+      if (boolean_condition == true)
+      {
+         for(size_t elem = 0UL; elem < checker.size(); elem++)
+         {
+            if (checker[elem] == 1U)
+               clstr_set.set_parent(elem, depths[0]);
+         }
+         columns_chosen.push_back(effective_col_idx);
+         if (depths[2] == 1)
+         {
+            clstr_set.increase_rank(depths[0]);
+         }
+         // if (columns_chosen.size() == rank)
+         //    break;
+      }
+   }
+
+   return columns_chosen;
 }

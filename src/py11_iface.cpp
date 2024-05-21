@@ -11,5 +11,6 @@ namespace py = pybind11;
 PYBIND11_MODULE(bpbp, bpbp) {
    py::class_<OBPOTF>(bpbp,"OBPOTF")
       .def(py::init<py::array_t<uint8_t, py::array::f_style> const &, float const &>())
-      .def("print_object", &OBPOTF::print_object);
+      .def("print_object", &OBPOTF::print_object)
+      .def("decode", &OBPOTF::decode);
 }
