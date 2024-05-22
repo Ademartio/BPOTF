@@ -26,9 +26,10 @@ class UF:
         )
         self.rows = H.shape[0]
         self.columns = H.shape[1]
-        
+        self.rank = np.linalg.matrix_rank(self.H)
+        # TOCHANGE
+        self.n_cols = 38
         self.Hog = copy.deepcopy(self.H).astype(np.uint8)
-        
         zeros_rows = np.zeros((2, self.columns))
         self.Hog =  np.vstack((self.Hog, zeros_rows))
         # self.Hog = self.Hog.astype(int)
@@ -44,7 +45,7 @@ class UF:
         # Definimos el número máximo de índices por columna
         max_nontrivial_per_col = np.max(np.sum(self.Hog == 1, axis=0))
         # Definimos la matriz de índices. Cuando un valor es -1, es que ya no está incluido.
-        self.index_matrix = np.full((max_nontrivial_per_col, self.columns), -1, dtype=np.uint8)
+        self.index_matrix = np.full((max_nontrivial_per_col, self.columns), -1, dtype=np.int8)
         
         for column in range(self.columns):
             # Get the row indices where the value is 1 in the current column
@@ -85,6 +86,7 @@ class UF:
         cluster_array = self.SetCluster()
         # La siguiente columna  indica qué columnas nos quedaremos como árbol.
         columns_chosen = np.zeros(self.columns, dtype = bool)
+        counter = 0
         # Iteramos sobre todas las columnas de la matriz self.Hog
         for column in range(self.columns):
             # Checker nos sirve para ever que checks coge cada evento.
@@ -115,9 +117,12 @@ class UF:
                 non_trivial_checker = np.where(checker == 1)[0]
                 for element in non_trivial_checker:
                     cluster_array[element,0] = depths[0]
-                columns_chosen[sorted_indices[column]] = True
                 if  depths[2]:
                     cluster_array[depths[0]][1] += 1
+                columns_chosen[sorted_indices[column]] = True
+                # counter += 1
+                # if counter == self.n_cols:
+                #     break
         # La siguiente lista nos indica qué columnas han sido elegidas.
         indices_columns_chosen = np.where(columns_chosen==True)[0]
         # returned_H = H_sorted[:-2,indices_columns_chosen]
@@ -152,6 +157,7 @@ class UF:
         second_recovered_error = self._bpd2.decode(syndrome)
         # if not self._bpd2.converge:
         #     print('Main error')
+        print(f"{len(columns_chosen)} out of {self.rank}")
 
         
         return second_recovered_error, average_time
