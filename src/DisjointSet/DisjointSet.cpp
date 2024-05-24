@@ -4,9 +4,9 @@
  * 
  * @brief   C++ implementation of the disjoint-set DSA. Taken from 
  *          https://www.geeksforgeeks.org/introduction-to-disjoint-set-data-structure-or-union-find-algorithm/ and may
- *          be subject to some changes depending the necessities of bpbp.
+ *          be subject to some changes depending the necessities of bpotf.
  * 
- * @version 0.1
+ * @version 0.2
  * @date    08/05/2024
  * 
  * @copyright Copyright (c) 2024
@@ -29,6 +29,12 @@ void DisjSet::make_set()
    for (long int i = 0; i < n; i++) {
       parent[i] = i;
    }
+}
+
+DisjSet::~DisjSet(void)
+{
+   delete [] rank;
+   delete [] parent;
 }
 
 // Finds set of given item x

@@ -4,9 +4,9 @@
  * 
  * @brief   C++ interface of the disjoint-set DSA class. Taken from 
  *          https://www.geeksforgeeks.org/introduction-to-disjoint-set-data-structure-or-union-find-algorithm/ and may
- *          be subject to some changes depending the necessities of bpbp.
+ *          be subject to some changes depending the necessities of bpotf.
  * 
- * @version 0.1
+ * @version 0.2
  * @date    08/05/2024
  * 
  * @copyright Copyright (c) 2024
@@ -26,6 +26,8 @@ class DisjSet
       // Constructor to create and 
       // initialize sets of n items 
       DisjSet(long int const & n);
+
+      ~DisjSet(void);
 
       // Creates n single item sets 
       void make_set();
