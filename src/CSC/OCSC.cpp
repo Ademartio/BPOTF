@@ -21,11 +21,11 @@ OCSC::OCSC(OCSC const & csc_mat):
    m_u64_m(csc_mat.m_u64_m),
    m_u64_n(csc_mat.m_u64_n)
 {
-   m_pu64_r_indices = new uint64_t[m_u64_n+1];
-   m_pu64_indptr = new uint64_t[m_u64_nnz];
+   m_pu64_indptr = new uint64_t[m_u64_n+1];
+   m_pu64_r_indices = new uint64_t[m_u64_nnz];
 
-   std::memcpy(m_pu64_r_indices, csc_mat.m_pu64_r_indices, (m_u64_n+1) * sizeof(uint64_t));
-   std::memcpy(m_pu64_indptr, csc_mat.m_pu64_indptr, m_u64_nnz * sizeof(uint64_t));
+   std::memcpy(m_pu64_indptr, csc_mat.m_pu64_indptr, (m_u64_n+1) * sizeof(uint64_t));
+   std::memcpy(m_pu64_r_indices, csc_mat.m_pu64_r_indices, m_u64_nnz * sizeof(uint64_t));
 }
 
 OCSC::OCSC(std::vector<uint64_t> const & u64_nnz_cols_vec,
@@ -37,11 +37,11 @@ OCSC::OCSC(std::vector<uint64_t> const & u64_nnz_cols_vec,
    // I think it is not real if the last column is all 0s but al least is something
    m_u64_m = *std::max_element(u64_row_idxs_vec.begin(), u64_row_idxs_vec.end()) + 1;
 
-   m_pu64_r_indices = new uint64_t[m_u64_n+1];
-   m_pu64_indptr = new uint64_t[m_u64_nnz];
+   m_pu64_indptr= new uint64_t[m_u64_n+1];
+   m_pu64_r_indices = new uint64_t[m_u64_nnz];
 
-   std::memcpy(m_pu64_r_indices, u64_nnz_cols_vec.data(), (m_u64_n+1) * sizeof(uint64_t));
-   std::memcpy(m_pu64_indptr, u64_row_idxs_vec.data(), m_u64_nnz * sizeof(uint64_t));
+   std::memcpy(m_pu64_indptr, u64_nnz_cols_vec.data(), (m_u64_n+1) * sizeof(uint64_t));
+   std::memcpy(m_pu64_r_indices, u64_row_idxs_vec.data(), m_u64_nnz * sizeof(uint64_t));
 }
 
 OCSC::OCSC(std::vector<std::vector<uint8_t>> const & pcm)
@@ -53,8 +53,8 @@ OCSC::OCSC(std::vector<std::vector<uint8_t>> const & pcm)
    m_u64_n = u64_n;
    m_u64_nnz = 0U;
 
-   m_pu64_r_indices = new uint64_t[u64_n+1];
-   m_pu64_r_indices[0] = 0;
+   m_pu64_indptr = new uint64_t[u64_n+1];
+   m_pu64_indptr[0] = 0;
 
    // count number of non-zero elements
    for (uint64_t j = 0U; j < u64_n; j++)
@@ -66,11 +66,11 @@ OCSC::OCSC(std::vector<std::vector<uint8_t>> const & pcm)
             m_u64_nnz++;
          }
       }
-      m_pu64_r_indices[j+1] = m_u64_nnz;
+      m_pu64_indptr[j+1] = m_u64_nnz;
    }
 
    // allocate memory
-   m_pu64_indptr = new uint64_t[m_u64_nnz];
+   m_pu64_r_indices = new uint64_t[m_u64_nnz];
 
    // fill array
    uint64_t u64_cont = 0U;
@@ -80,7 +80,7 @@ OCSC::OCSC(std::vector<std::vector<uint8_t>> const & pcm)
       {
          if (pcm[i][j] != 0U)
          {
-            m_pu64_indptr[u64_cont] = i;
+            m_pu64_r_indices[u64_cont] = i;
             u64_cont++;
          }
       }
@@ -98,8 +98,8 @@ OCSC::OCSC(std::vector<uint8_t> const & pcm, uint64_t const & u64_row_num)
    m_u64_n = pcm.size() / u64_row_num;
    m_u64_nnz = 0U;
 
-   m_pu64_r_indices = new uint64_t[m_u64_n+1];
-   m_pu64_r_indices[0] = 0;
+   m_pu64_indptr = new uint64_t[m_u64_n+1];
+   m_pu64_indptr[0] = 0;
 
    // count number of non-zero elements
    for (uint64_t j = 0U; j < m_u64_n; j++)
@@ -111,11 +111,11 @@ OCSC::OCSC(std::vector<uint8_t> const & pcm, uint64_t const & u64_row_num)
             m_u64_nnz++;
          }
       }
-      m_pu64_r_indices[j+1] = m_u64_nnz;
+      m_pu64_indptr[j+1] = m_u64_nnz;
    }
 
    // allocate memory
-   m_pu64_indptr = new uint64_t[m_u64_nnz];
+   m_pu64_r_indices = new uint64_t[m_u64_nnz];
 
    // fill array
    uint64_t u64_cont = 0U;
@@ -125,7 +125,7 @@ OCSC::OCSC(std::vector<uint8_t> const & pcm, uint64_t const & u64_row_num)
       {
          if (pcm[(j*m_u64_m)+i] != 0U)
          {
-            m_pu64_indptr[u64_cont] = i;
+            m_pu64_r_indices[u64_cont] = i;
             u64_cont++;
          }
       }
@@ -142,23 +142,23 @@ void OCSC::print_csc(void)
 {
    std::cout << "Shape (MxN): " << m_u64_m << "x" << m_u64_n << std::endl;
    std::cout << "m_u64_nnz: " << m_u64_nnz << std::endl;
-   std::cout << "m_pu64_indptr: [";
+   std::cout << "m_pu64_r_indices: [";
    for (uint64_t i = 0; i < m_u64_nnz; i++)
    {
       char * str = ", ";
       if (i == m_u64_nnz-1)
          str = "";
-      std::cout << m_pu64_indptr[i] << str;
+      std::cout << m_pu64_r_indices[i] << str;
    }
    std::cout << "]\n";
 
-   std::cout << "m_pu64_r_indices: [";
+   std::cout << "m_pu64_indptr: [";
    for (uint64_t i = 0; i < m_u64_n+1; i++)
    {
       char * str = ", ";
       if (i == m_u64_n)
          str = "";
-      std::cout << m_pu64_r_indices[i] << str;
+      std::cout << m_pu64_indptr[i] << str;
    }
    std::cout << "]\n";
 
@@ -166,13 +166,14 @@ void OCSC::print_csc(void)
 
 std::vector<std::vector<uint8_t>> OCSC::expand(void)
 {
-   std::vector<std::vector<uint8_t>> res_mat(m_u64_m, std::vector<uint8_t>(m_u64_n, 0));
+   std::vector<std::vector<uint8_t>> res_mat(m_u64_m, std::vector<uint8_t>(m_u64_n, 0U));
 
-   for (uint64_t i = 1U; i < m_u64_nnz; i++)
+   for (uint64_t i = 1U; i < m_u64_n+1; i++)
    {
       for (uint64_t j = m_pu64_indptr[i-1]; j < m_pu64_indptr[i]; j++)
       {
-         res_mat[i][j] = 1U;
+         uint64_t row_idx = m_pu64_r_indices[j];
+         res_mat[row_idx][i-1] = 1U;
       }
    }
 
