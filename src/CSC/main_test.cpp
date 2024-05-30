@@ -10,7 +10,7 @@ void printMat(vector<vector<uint8_t>> const & mat)
    for (uint64_t i =0U; i < mat.size(); i++)
    {
       for (uint64_t j=0U; j < mat[0].size(); j++)
-         cout << mat[i][j] << " ";
+         cout << int(mat[i][j]) << " ";
       cout << endl;
    }
    cout << endl;
@@ -39,8 +39,14 @@ int main(void)
    OCSC o_csc_mat(matrix);
    cout << "Constructed from Matrix:\n";
    o_csc_mat.print_csc();
-   u8_expanded_mat = o_csc_mat.expand();
-   printMat(u8_expanded_mat);
+   //u8_expanded_mat = o_csc_mat.expand();
+   printMat(o_csc_mat.expand());
+   cout << "Number of nnz in column 1: " << o_csc_mat.get_col_nnz(1) << endl;
+   vector<uint64_t> col1_nnz_idxs = o_csc_mat.get_col_row_idxs(1);
+   cout << "Indeces of nnz in column 1: ";
+   for (int i = 0, end = col1_nnz_idxs.size(); i < end; i++)
+      cout << int(col1_nnz_idxs[i]) << " ";
+   cout << endl;
 
    OCSC o_csc_cm_mat(u8_cm_mat_vec, 5);
    cout << "Constructed from Column-Major:\n";

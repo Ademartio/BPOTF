@@ -179,3 +179,29 @@ std::vector<std::vector<uint8_t>> OCSC::expand(void)
 
    return res_mat;
 }
+
+uint64_t OCSC::get_col_nnz(uint64_t const & u64_col)
+{
+   if (u64_col > m_u64_n)
+   {
+      throw std::runtime_error("Error. Invalid column number!\n");
+   }
+
+   return m_pu64_indptr[u64_col+1] - m_pu64_indptr[u64_col];
+}
+
+std::vector<uint64_t> OCSC::get_col_row_idxs(uint64_t const & u64_col)
+{
+   std::vector<uint64_t> u64_res_vec;
+   uint64_t u64_col_nnz = get_col_nnz(u64_col);
+   if (u64_col_nnz != 0)
+   {
+      u64_res_vec.resize(u64_col_nnz);
+      for (uint64_t i = 0U; i < u64_col_nnz; i++)
+      {
+         u64_res_vec[i] = m_pu64_r_indices[m_pu64_indptr[u64_col]+i];
+      }
+   }
+
+   return u64_res_vec;
+}

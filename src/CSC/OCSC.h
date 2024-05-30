@@ -43,6 +43,10 @@ class OCSC
 
       std::vector<std::vector<uint8_t>> expand(void);
 
+      uint64_t get_col_nnz(uint64_t const & u64_col);
+
+      std::vector<uint64_t> get_col_row_idxs(uint64_t const & u64_col);
+
       ~OCSC();
 };
 
