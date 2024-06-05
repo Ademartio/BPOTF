@@ -2,67 +2,56 @@ import numpy as np
 from ldpc import bp_decoder
 import copy
 import time
+import stim
+from beliefmatching import detector_error_model_to_check_matrices
 
-
-
-class UF:
+class UFCLN:
     
     
     def __init__(self,
-                 H: np.array,
-                 p : float,
+                 dem: stim.DetectorErrorModel
                  ):
-        self.H = H
-        self.p = p
         
-        if p is float:
-            self.pfloat = True
-            # Para hacer el primer BP
-            self._bpd = bp_decoder(
-                H,
-                error_rate = p
-            )
-                    # Para hacer el segundo BP
-            self._bpd2 = bp_decoder(
-                H,
-                error_rate = p
-            )
-        else:
-            self.pfloat = False
-            # Para hacer el primer BP
-            self._bpd = bp_decoder(
-                H,
-                channel_probs = p
-            )
-            self._bpd2 = bp_decoder(
-                H,
-                channel_probs = p
-            )
+        self._model = detector_error_model_to_check_matrices(dem)
+        self.H = self._model.check_matrix
+        self.Hedge = self._model.edge_check_matrix
+        self.priors = self._model.priors
+        self.priors_edges = self._model.hyperedge_to_edge_matrix @ self.priors
+        
+        # Para hacer el primer BP, en el cln 
+        self._bpd = bp_decoder(
+            self.H,
+            channel_probs = self.priors
+        )
+        # Para hacer el segundo BP, en la matriz de los edges y, futúramente fenomenológica
+        self._bpd2 = bp_decoder(
+            self.Hedge,
+            channel_probs = self.priors_edges
+        )
 
-        self.rows = H.shape[0]
-        self.columns = H.shape[1]
-        self.rank = np.linalg.matrix_rank(self.H)
-        self.Hog = copy.deepcopy(self.H).astype(np.uint8)
-        zeros_rows = np.zeros((2, self.columns))
+        # self.rank = np.linalg.matrix_rank(self.H)
+        self.Hog = copy.deepcopy(self.Hedge).toarray().astype(np.uint8)
+        self.columns = self.Hog.shape[1]
+        zeros_rows = np.zeros((1, self.columns))
         self.Hog =  np.vstack((self.Hog, zeros_rows))
-        # self.Hog = self.Hog.astype(int)
+        self.rows = self.Hog.shape[0]
+        
         
         # We add virtual checks so all columns have at least two non-trivial elements.
         for i in range(self.columns):
-            ones_in_col = np.where(H[:,i] == 1)[0]
+            ones_in_col = np.where(self.Hog[:,i] == 1)[0]
             if len(ones_in_col) == 1:
-                if ones_in_col[0] < self.rows//2:
-                    self.Hog[-2,i] = 1
-                else:
-                    self.Hog[-1,i] = 1
+                self.Hog[-1,i] = 1
         # Definimos el número máximo de índices por columna
         max_nontrivial_per_col = np.max(np.sum(self.Hog == 1, axis=0))
         # Definimos la matriz de índices. Cuando un valor es -1, es que ya no está incluido.
-        self.index_matrix = np.full((max_nontrivial_per_col, self.columns), -1, dtype=np.int8)
+        self.index_matrix = np.full((max_nontrivial_per_col, self.columns), -1, dtype=np.int64)
         
         for column in range(self.columns):
             # Get the row indices where the value is 1 in the current column
             row_indices = np.where(self.Hog[:, column] == 1)[0]
+            if column == 1069:
+                pass
             # Place these indices in the corresponding column of index_matrix
             self.index_matrix[:len(row_indices), column] = row_indices
         
@@ -99,11 +88,10 @@ class UF:
         cluster_array = self.SetCluster()
         # La siguiente columna  indica qué columnas nos quedaremos como árbol.
         columns_chosen = np.zeros(self.columns, dtype = bool)
-        counter = 0
         # Iteramos sobre todas las columnas de la matriz self.Hog
         for column in range(self.columns):
             # Checker nos sirve para ever que checks coge cada evento.
-            checker = np.zeros(self.rows+2, dtype = bool)
+            checker = np.zeros(self.rows, dtype = bool)
             # Depths: (root, depth, boolean about increasing tree size)
             depths = [0, -1, False]
             boolean_condition = True
@@ -150,11 +138,14 @@ class UF:
         recovered_error = self._bpd.decode(syndrome)
         # Si converge devolvemos el error.
         if self._bpd.converge:
+            recovered_error = (self._model.observables_matrix @ recovered_error) % 2
             return recovered_error, 0
         # Si no converge, nos quedamos con las llrs.
         llrs = self._bpd.log_prob_ratios
-        # Ordenamos las llrs y nos quedamos con los indices por orden
-        sorted_indices = self.sort_matrix(llrs)
+        ps_h = 1 / (1 + np.exp(llrs))
+        ps_e = self._model.hyperedge_to_edge_matrix @ ps_h        
+        # Ordenamos las posterioris del fenomenologico y nos quedamos con los indices por orden
+        sorted_indices = self.sort_matrix(ps_e)
         a = time.perf_counter()
         # Nos quedamos con las columnas linearmente independientes.
         columns_chosen = self.Kruskal_hypergraph(sorted_indices)
@@ -164,18 +155,12 @@ class UF:
         # Para que tenga en cuenta solo las columnas que nos interesan, lo iniciamos, le damos probabilidad 0 a las columnas que no usamos 
         # y probabilidad self.p a las que sí.
         updated_probs = np.zeros(self.columns)
-        if self.pfloat:
-            updated_probs[columns_chosen] = self.p
-        else:
-            updated_probs[columns_chosen] = self.p[columns_chosen]
+
+        updated_probs[columns_chosen] = self.priors_edges[columns_chosen]
         self._bpd2.update_channel_probs(updated_probs)
         # Luego le damos a decode.
         second_recovered_error = self._bpd2.decode(syndrome)
-        # if not self._bpd2.converge:
-        #     print('Main error')
-        # print(f"{len(columns_chosen)} out of {self.rank}")
-
-        
+        second_recovered_error = (self._model.edge_observables_matrix @ second_recovered_error) % 2
         return second_recovered_error, average_time
     
     
