@@ -133,10 +133,11 @@ class UF:
                 if  depths[2]:
                     cluster_array[depths[0]][1] += 1
                 columns_chosen[sorted_indices[column]] = True
-                # counter += 1
+                counter += 1
                 # if counter == self.n_cols:
                 #     break
         # La siguiente lista nos indica qué columnas han sido elegidas.
+        # print(f'Counter 2 {counter}')
         indices_columns_chosen = np.where(columns_chosen==True)[0]
         # returned_H = H_sorted[:-2,indices_columns_chosen]
         # new_rows, new_cols = returned_H.shape
@@ -171,11 +172,10 @@ class UF:
         self._bpd2.update_channel_probs(updated_probs)
         # Luego le damos a decode.
         second_recovered_error = self._bpd2.decode(syndrome)
+        
         # if not self._bpd2.converge:
         #     print('Main error')
         # print(f"{len(columns_chosen)} out of {self.rank}")
-
-        
         return second_recovered_error, average_time
     
     
