@@ -4,7 +4,6 @@ import copy
 import time
 import stim
 from beliefmatching import detector_error_model_to_check_matrices
-
 class UFCLN:
     
     
@@ -185,9 +184,8 @@ class UFCLN:
         self._bpd2.update_channel_probs(updated_probs)
         # Luego le damos a decode.
         second_recovered_error = self._bpd2.decode(syndrome)
-        if not self._bpd2.converge:
-            print('NO CONVERGENCE')
-            return np.array([2]), average_time
+        # if not self._bpd2.converge:
+        #     print('NO CONVERGENCE')
         second_recovered_error = (self._model.edge_observables_matrix @ second_recovered_error) % 2
         # if not np.all(error_edge == second_recovered_error):
         #     pass
