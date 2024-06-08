@@ -15,6 +15,7 @@
 
 #include <inttypes.h>
 #include <vector>
+#include <span> // C++20
 
 class OCSC
 {
@@ -36,6 +37,8 @@ class OCSC
             uint64_t const & u64_nnz);
 
       OCSC(std::vector<uint8_t> const & pcm, uint64_t const & u64_row_num);
+
+      OCSC(std::span<uint8_t> const & pcm, uint64_t const & u64_row_num);
 
       OCSC(std::vector<std::vector<uint8_t>> const & pcm);
 

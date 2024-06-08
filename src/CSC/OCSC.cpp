@@ -132,6 +132,51 @@ OCSC::OCSC(std::vector<uint8_t> const & pcm, uint64_t const & u64_row_num)
    }
 }
 
+OCSC::OCSC(std::span<uint8_t> const & pcm, uint64_t const & u64_row_num)
+{
+   if (pcm.size() % u64_row_num != 0)
+   {
+      throw std::runtime_error("Error. Number of rows must be equal in all columns.");
+   }
+
+   m_u64_m = u64_row_num;
+   m_u64_n = pcm.size() / u64_row_num;
+   m_u64_nnz = 0U;
+
+   m_pu64_indptr = new uint64_t[m_u64_n+1];
+   m_pu64_indptr[0] = 0;
+
+   // count number of non-zero elements
+   for (uint64_t j = 0U; j < m_u64_n; j++)
+   {
+      for (uint64_t i = 0U; i < m_u64_m; i++)
+      {
+         if (pcm[(j*m_u64_m)+i] != 0U)
+         {
+            m_u64_nnz++;
+         }
+      }
+      m_pu64_indptr[j+1] = m_u64_nnz;
+   }
+
+   // allocate memory
+   m_pu64_r_indices = new uint64_t[m_u64_nnz];
+
+   // fill array
+   uint64_t u64_cont = 0U;
+   for (uint64_t j = 0U; j < m_u64_n; j++)
+   {
+      for (uint64_t i = 0U; i < m_u64_m; i++)
+      {
+         if (pcm[(j*m_u64_m)+i] != 0U)
+         {
+            m_pu64_r_indices[u64_cont] = i;
+            u64_cont++;
+         }
+      }
+   }
+}
+
 OCSC::~OCSC()
 {
    delete [] m_pu64_r_indices;
