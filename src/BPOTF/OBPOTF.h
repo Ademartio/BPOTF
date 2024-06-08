@@ -71,7 +71,7 @@ class OBPOTF
     *******************************************************************************************************************/
    ~OBPOTF();
 
-   py::array_t<uint8_t> decode(py::array_t<int, py::array::c_style> syndrome, double & exec_time);
+   py::array_t<uint8_t> decode(py::array_t<int, py::array::c_style> syndrome);
 
    /********************************************************************************************************************
     * @brief Prints the object's member. Developing purposes and testing.

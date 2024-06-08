@@ -178,7 +178,7 @@ void OBPOTF::print_object(void)
 
 }
 
-py::array_t<uint8_t> OBPOTF::decode(py::array_t<int, py::array::c_style> syndrome, double & exec_time)
+py::array_t<uint8_t> OBPOTF::decode(py::array_t<int, py::array::c_style> syndrome)
 {
    std::string label("First decode");
    startExecTime();
