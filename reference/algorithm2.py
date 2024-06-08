@@ -7,12 +7,12 @@ from qecsim import paulitools as pt
 import networkx as nt
 from copy import deepcopy
 from ldpc import bposd_decoder
-from UF import UF
+#from UF import UF
 import time
 
 import csv
 
-from module import bpbp
+from module import BPOTF #bpbp
 
 def error_generation(p, n):
     """Depolarizing error generation
@@ -134,9 +134,9 @@ def kruskal_on_hypergraph(Hog):
         
     
 if __name__ == "__main__":
-    #distances = [3]
+    distances = [3]
     #distances = [11]
-    distances = [3, 5, 7, 9, 11]
+    #distances = [3, 5, 7, 9, 11]
     NMCs = [10**4, 10**4, 10**4, 10**4, 10**4, 10**4, 10**4, 10**4, 10**4, 10**3, 10**3, 10**3, 10**3]
     ps = np.linspace(0.01, 0.13, num=13)
     PlsBP = {}
@@ -146,7 +146,7 @@ if __name__ == "__main__":
     times_BPOSD = {}
     times_BPBP = {}
 
-    f = open("times.csv", "w")
+    # f = open("times.csv", "w")
 
     for distance in distances:
         myCode = RotatedPlanarCode(distance, distance)
@@ -179,12 +179,13 @@ if __name__ == "__main__":
                 osd_method = "osd_0"
             )
             
-            _uf = UF(
-                pcm,
-                p
-            )
+            # _uf = UF(
+            #     pcm,
+            #     p
+            # )
 
-            _bpotf = bpbp.OBPOTF(
+            #_bpotf = bpbp.OBPOTF(
+            _bpotf = BPOTF.OBPOTF(
                 pcm.astype(np.uint8), 
                 p
             )
@@ -196,11 +197,15 @@ if __name__ == "__main__":
             time_av_BPBP = 0
             kruskal_time_list = []
             
+            #print(pcm)
+            #print(p)
             for iteration in range(NMCs[index]):
                 error = error_generation(p, myCode.n_k_d[0])
                 # error = np.zeros(myCode.n_k_d[0]*2, dtype = int)
                 # error[3] = 1
                 syndrome = pt.bsp(error, myCode.stabilizers.T)
+                #print(syndrome)
+                
                 # syndrome = pt.bsp(error, pcm.T)
                 # BPOSD decoder
                 #----------------------------
@@ -245,13 +250,13 @@ if __name__ == "__main__":
             print(f'Error BPOSD: {PlBPOSD} with average time {time_av_BPOSD}')
             print(f'Error BPBP: {PlBPBP} with average time {time_av_BPBP}')
             
-            f.write(f'Distance: {distance} and physical error: {p}\n')
-            f.write('-------------------------------------------------\n')
-            f.write('Max BPOSD time: {}\n'.format(max(times_BPOSD[distance])))
-            f.write('Max BPBP time: {}\n\n'.format(max(times_BPBP[distance])))
+            # f.write(f'Distance: {distance} and physical error: {p}\n')
+            # f.write('-------------------------------------------------\n')
+            # f.write('Max BPOSD time: {}\n'.format(max(times_BPOSD[distance])))
+            # f.write('Max BPBP time: {}\n\n'.format(max(times_BPBP[distance])))
             
             if len(kruskal_time_list) > 0:
                 print(f'Average Kruskal time {sum(kruskal_time_list)/len(kruskal_time_list)}')
             print('\n')
         
-    f.close()
+    # f.close()

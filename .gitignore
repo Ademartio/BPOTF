@@ -2,3 +2,4 @@ module/
 .venv*/
 .vscode/
 __pycache__/
+build/

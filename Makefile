@@ -1,11 +1,12 @@
 
-MODULE_NAME		:= bpbp
+MODULE_NAME		:= BPOTF
 MODULE_DIR		:= ./module
 INC_DIR			:= ./src
 PYBIND11_INC 	:= $(shell python3 -m pybind11 --includes)
 MOD_EXT_SUFIX	:= $(shell python3-config --extension-suffix)
 PY_LIBS			:= $(shell python3-config --ldflags)
 SRCS				:= src/BPOTF/OBPOTF.cpp \
+						src/CSC/OCSC.cpp \
 						src/DisjointSet/DisjointSet.cpp \
 						src/py11_iface.cpp 
 
