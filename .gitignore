@@ -3,3 +3,5 @@ module/
 .vscode/
 __pycache__/
 build/
+CMakeFiles/
+CMakeCache.txt
