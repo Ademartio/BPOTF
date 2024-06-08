@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.15)
 
+if (${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
+   message(FATAL_ERROR "In-source builds are not allowed!")
+endif()
+
 set(TARGET_NAME BPOTF)
 
 # Project name and options
