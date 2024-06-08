@@ -233,7 +233,7 @@ Distributed under the MIT License. See `LICENSE.txt` for more information.
 <!-- CONTACT -->
 ## Contact
 
-* _Antonio de Martì_ - [@your_twitter](https://twitter.com/your_username) - ademartio@unav.es
+* _Antonio de Martì_ - [@ton_demarti](https://x.com/ton_demarti) - ademartio@unav.es
 * _Josu Etxezarreta_ - [@katutxakur](https://x.com/katutxakur) - jetxezarreta@unav.es
 * _Imanol Etxezarreta_ - ietxezarretam@gmail.com
 
@@ -249,9 +249,8 @@ Project Link: [https://github.com/Ademartio/BPBP](https://github.com/Ademartio/B
 
 Thanks to the following amazing projects and webs for the help, tools and information! Do not forget to visit and star/like their work also!
 
-* [LDPC python library](https://github.com/quantumgizmos/ldpc.git)
-* [Best-README-Template](https://github.com/othneildrew/Best-README-Template)
-* [Choose an Open Source License](https://choosealicense.com)
+* [LDPC python library](https://github.com/quantumgizmos/ldpc.git) - Joschka Roffe
+* [Best-README-Template](https://github.com/othneildrew/Best-README-Template) - Othneil Drew
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
