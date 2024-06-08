@@ -23,6 +23,9 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
 
+// Custom includes
+#include "CSC/OCSC.h"
+
 namespace py = pybind11;
 
 class OBPOTF
@@ -33,6 +36,7 @@ class OBPOTF
    uint64_t m_u64_pcm_cols;   // Parity check matrix number of columns.
    std::vector<int64_t> m_ai64_idx_matrix; // Row indexes per column where a non-trivial element is located in the pcm.
    uint16_t m_u16_idx_matrix_rows;  // Row number of m_ai64_idx_matrix. Columns will be m_u64_pcm_cols.
+   OCSC * m_po_csc_mat; // Matrix in Compressed-Sparse-Column format.
    std::vector<uint64_t> m_au64_index_array; // Array that holds indexes from 0 to m_u64_pcm_cols-1 to be sorted
 
    py::object m_bpd; // Python class object from ldpc for decoding
@@ -61,6 +65,11 @@ class OBPOTF
     * @brief Delete default constructor, to avoid empty objects.
     *******************************************************************************************************************/
    OBPOTF() = delete;
+
+   /********************************************************************************************************************
+    * @brief Destroy the OBPOTF object.
+    *******************************************************************************************************************/
+   ~OBPOTF();
 
    py::array_t<uint8_t> decode(py::array_t<int, py::array::c_style> syndrome, double & exec_time);
 

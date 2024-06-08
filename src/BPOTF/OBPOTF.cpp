@@ -20,6 +20,7 @@
 
 #include "OBPOTF.h"
 #include "DisjointSet/DisjointSet.h"
+#include "CSC/OCSC.h"
 
 using namespace py::literals;
 
@@ -37,7 +38,7 @@ void finishExecTime(std::string label)
    auto stop = std::chrono::high_resolution_clock::now();
    double exec_time = std::chrono::duration_cast<std::chrono::nanoseconds>(stop-start).count();
    exec_time *= 1e-9;
-   std::cout << "Execution time for \"" << label << "\" is: " << exec_time << std::endl;
+   //std::cout << "Execution time for \"" << label << "\" is: " << exec_time << std::endl;
 }
 
 
@@ -99,6 +100,8 @@ OBPOTF::OBPOTF(py::array_t<uint8_t, py::array::f_style> const & au8_pcm,
 
    // Span pointer to the pcm python input to be faster
    std::span<uint8_t> const au8_pcm_sp = toSpan2D(au8_pcm);
+   // Create CSC type object.
+   m_po_csc_mat = new OCSC(au8_pcm_sp, m_u64_pcm_rows);
    // Temporal matrix that holds the row indexes per column
    std::vector<std::vector<int64_t>> aai64_temp_vec;
    // Initialize index matrix rows.
@@ -362,4 +365,9 @@ std::vector<uint64_t> OBPOTF::koh_v2_uf(py::array_t<float> const & llrs)
    }
 
    return columns_chosen;
+}
+
+OBPOTF::~OBPOTF(void)
+{
+   delete m_po_csc_mat;
 }
