@@ -16,6 +16,11 @@
 #include <iostream>
 #include <chrono>
 
+#if defined(_MSC_VER)
+#include <BaseTsd.h>
+typedef SSIZE_T ssize_t;
+#endif
+
 #include <pybind11/embed.h>
 
 #include "OBPOTF.h"
@@ -27,21 +32,6 @@ using namespace py::literals;
 /***********************************************************************************************************************
  * Helper functions
  **********************************************************************************************************************/
-std::chrono::_V2::system_clock::time_point start, stop;
-void startExecTime()
-{
-   start = std::chrono::high_resolution_clock::now();
-}
-
-void finishExecTime(std::string label)
-{
-   auto stop = std::chrono::high_resolution_clock::now();
-   double exec_time = std::chrono::duration_cast<std::chrono::nanoseconds>(stop-start).count();
-   exec_time *= 1e-9;
-   //std::cout << "Execution time for \"" << label << "\" is: " << exec_time << std::endl;
-}
-
-
 // helper function to avoid making a copy when returning a py::array_t
 // author: https://github.com/YannickJadoul
 // source: https://github.com/pybind/pybind11/issues/1042#issuecomment-642215028
@@ -180,47 +170,25 @@ void OBPOTF::print_object(void)
 
 py::array_t<uint8_t> OBPOTF::decode(py::array_t<int, py::array::c_style> syndrome)
 {
-   std::string label("First decode");
-   startExecTime();
    py::array_t<uint8_t> py_recovered_err = m_bpd.attr("decode")(syndrome);
-   finishExecTime(label);
    
-   label = "Converge";
-   startExecTime();
    int py_converge = m_bpd.attr("converge").cast<int>();
-   finishExecTime(label);
 
    if (py_converge != 1)
    {
-      //std::cout << "No converge!\n";
-      label = "log_prob_ratios";
-      startExecTime();
       py::array_t<double> llrs = m_bpd.attr("log_prob_ratios").cast<py::array_t<double>>();
-      finishExecTime(label);
 
       //std::vector<uint64_t> columns_chosen = koh_v2_classical_uf(llrs);
-      label = "uf-kruskal";
-      startExecTime();
       std::vector<uint64_t> columns_chosen = koh_v2_uf(llrs);
-      finishExecTime(label);
 
-      label = "generate updated_probs";
-      startExecTime();
       std::vector<float> updated_probs(m_u64_pcm_cols, 0);
       for (uint64_t u64_idx = 0U; u64_idx < columns_chosen.size(); u64_idx++)
          updated_probs[columns_chosen[u64_idx]] = m_p;
       py::array_t<float> py_updated_probs = as_pyarray(std::move(updated_probs));
-      finishExecTime(label);
 
-      label = "set updated_probs";
-      startExecTime();
       //py::array_t<double> & pyref_channel_probs = m_bpd_secondary.attr("channel_probs")().cast<py::array_t<double>>;
       m_bpd_secondary.attr("update_channel_probs")(py_updated_probs);
-      finishExecTime(label);
-      label = "Second decode";
-      startExecTime();
       py_recovered_err = m_bpd_secondary.attr("decode")(syndrome);
-      finishExecTime(label);
    }
 
    return py_recovered_err;

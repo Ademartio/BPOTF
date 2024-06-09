@@ -190,7 +190,7 @@ void OCSC::print_csc(void)
    std::cout << "m_pu64_r_indices: [";
    for (uint64_t i = 0; i < m_u64_nnz; i++)
    {
-      char * str = ", ";
+      std::string str = ", ";
       if (i == m_u64_nnz-1)
          str = "";
       std::cout << m_pu64_r_indices[i] << str;
@@ -200,7 +200,7 @@ void OCSC::print_csc(void)
    std::cout << "m_pu64_indptr: [";
    for (uint64_t i = 0; i < m_u64_n+1; i++)
    {
-      char * str = ", ";
+      std::string str = ", ";
       if (i == m_u64_n)
          str = "";
       std::cout << m_pu64_indptr[i] << str;
