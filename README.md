@@ -157,8 +157,25 @@ The steps to compile the python importable BPOTF module using this method are ex
 
 #### Pip
 
-Work-in-progress...
-<!-- Add instructions when available -->
+To compile the python importable module using pip, the only requisite is to have a C++20 compatible compiler and a pip 10+. Currently, only in Debian based systems has been tested this method but the idea is to offer support for Windows environments too. To compile it using this method, the steps indicated below can be followed:
+
+1. Clone the git repository and navigate to the directory.
+   ```sh
+   git clone https://github.com/Ademartio/BPBP.git
+   cd BPBP
+   ```
+2. Execute the following command:
+   ```sh
+   python3 -m pip install -U .
+   ```
+
+This will generate a `build` folder in which `egg-info` will be placed and the module will be generated inside the `src` folder. Then, this module could be used directly as any other python module:
+
+```Python
+import BPOTF
+```
+
+To install the module in editable mode, just add a `-e` flag in the installation command.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -192,9 +209,9 @@ _bpotf.decode(syndrome.astype(np.int32))
 <!-- ROADMAP -->
 ## Roadmap
 
-- [ ] Add a License to the repo
-- [ ] Add Pip supported installation method
+- [ ] Add a License to the repo.
 - [ ] Add CSC support.
+- [x] Add Pip supported installation method.
 
 See the [open issues](https://github.com/Ademartio/BPBP/issues) for a full list of proposed features (and known issues).
 
@@ -249,6 +266,7 @@ Project Link: [https://github.com/Ademartio/BPBP](https://github.com/Ademartio/B
 
 Thanks to the following amazing projects and webs for the help, tools and information! Do not forget to visit and star/like their work also!
 
+* [Pybind11](https://github.com/pybind/pybind11/tree/master)
 * [LDPC python library](https://github.com/quantumgizmos/ldpc.git) - Joschka Roffe
 * [Best-README-Template](https://github.com/othneildrew/Best-README-Template) - Othneil Drew
 

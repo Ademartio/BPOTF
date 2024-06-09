@@ -1,0 +1,31 @@
+[build-system]
+requires = [
+   "setuptools>=42",
+   "pybind11>=2.10.0"
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "BPOTF"
+
+description = "BPOTF: Implementation of Belief Propagation Ordered Tanner Forest decoding method."
+readme = "README.md"
+authors = [
+   { name = "Antonio de Martì i Olius", email = "ademartio@unav.es" },
+   { name = "Josu Etxezarreta Martinez", email = "jetxezarreta@unav.es" },
+   { name = "Imanol Etxezarreta Martinez", email = "ietxezarretam@gmail.com" }
+]
+#license = { file = "LICENSE" }
+
+requires-python = ">=3.8"
+dependencies = [
+   "ldpc"
+]
+version = "0.0.1"
+
+[tool.setuptools.packages.find]
+where = ["src"]  
+include = ["BPOTF"]
+
+[tool.distutils.egg_info]
+egg_base = "build"
