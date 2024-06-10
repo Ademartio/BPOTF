@@ -106,7 +106,7 @@ Another heavy dependecy is [Pybind11](https://github.com/pybind/pybind11.git), b
 sudo python3 -m pip install pybind11
 ```
 
-If the installation method of CMake is being used, then cmake should be installed in the system with version >=3.15. For Debian based systems, this could be achieved like so:
+If the installation method of CMake is being used, then cmake should be installed in the system with version >=3.24. For Debian based systems, this could be achieved like so:
 
 ```sh
 sudo apt update && sudo apt upgrade
@@ -164,7 +164,12 @@ To compile the python importable module using pip, the only requisite is to have
    git clone https://github.com/Ademartio/BPBP.git
    cd BPBP
    ```
-2. Execute the following command:
+2. (Optional) It is recommended to create a virtual environment to install python packages local to the project.
+   ```sh
+   python3 -m venv .venv
+   source .venv/bin/activate
+   ```
+3. Execute the following command:
    ```sh
    python3 -m pip install -U .
    ```
