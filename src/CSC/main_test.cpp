@@ -46,7 +46,12 @@ int main(void)
    cout << "Indeces of nnz in column 1: ";
    for (int i = 0, end = col1_nnz_idxs.size(); i < end; i++)
       cout << int(col1_nnz_idxs[i]) << " ";
-   cout << endl;
+   cout << endl << endl;
+
+   cout << "Inserting tests:" << endl;
+   o_csc_mat.add_row_entry(2, 5);
+   o_csc_mat.print_csc();
+   printMat(o_csc_mat.expand());
 
    OCSC o_csc_cm_mat(u8_cm_mat_vec, 5);
    cout << "Constructed from Column-Major:\n";

@@ -16,6 +16,42 @@
 
 #include "OCSC.h"
 
+/***********************************************************************************************************************
+ * PRIVATE FUNCTIONS
+ **********************************************************************************************************************/
+void OCSC::push_row(uint64_t const & u64_col_idx, uint64_t const & u64_row_idx)
+{
+   uint64_t * pu64_temp_buffer = new uint64_t[m_u64_nnz+1];
+
+   uint64_t u64_col_nnz = get_col_nnz(u64_col_idx);
+   uint64_t u64_num_entries_until_insert = m_pu64_indptr[u64_col_idx]+u64_col_nnz;
+   std::memcpy(pu64_temp_buffer, m_pu64_r_indices, u64_num_entries_until_insert * sizeof(uint64_t));
+   pu64_temp_buffer[u64_num_entries_until_insert] = u64_row_idx;
+   uint64_t u64_rest = m_u64_nnz-u64_num_entries_until_insert;
+   std::memcpy(&pu64_temp_buffer[u64_num_entries_until_insert]+1, 
+                  &m_pu64_r_indices[u64_num_entries_until_insert], 
+                  u64_rest * sizeof(uint64_t));
+   
+   delete [] m_pu64_r_indices;
+   m_pu64_r_indices = pu64_temp_buffer;
+
+   for (uint64_t u64_idx = u64_col_idx + 1; u64_idx < m_u64_n + 1; ++u64_idx)
+   {
+      ++m_pu64_indptr[u64_idx];
+   }
+
+   ++m_u64_nnz;
+   m_u64_m = u64_row_idx+1;
+}
+
+void OCSC::insert_row(uint64_t const & u64_col_idx, uint64_t const & u64_row_idx)
+{
+   
+}
+
+/***********************************************************************************************************************
+ * PUBLIC FUNCTIONS
+ **********************************************************************************************************************/
 OCSC::OCSC(OCSC const & csc_mat):
    m_u64_nnz(csc_mat.m_u64_nnz),
    m_u64_m(csc_mat.m_u64_m),
@@ -249,4 +285,21 @@ std::vector<uint64_t> OCSC::get_col_row_idxs(uint64_t const & u64_col)
    }
 
    return u64_res_vec;
+}
+
+void OCSC::add_row_entry(uint64_t const & u64_col_idx, uint64_t const & u64_row_idx)
+{
+   if (u64_col_idx >= this->m_u64_n)
+   {
+      throw std::runtime_error("Error. Column index out-of-bounds...");
+   }
+
+   if (u64_row_idx >= this->m_u64_m)
+   {
+      this->push_row(u64_col_idx, u64_row_idx);
+   }
+   else
+   {
+      this->insert_row(u64_col_idx, u64_row_idx);
+   }
 }

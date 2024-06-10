@@ -27,6 +27,12 @@ class OCSC
       uint64_t m_u64_m;
       uint64_t m_u64_n;
 
+   private:
+
+      void push_row(uint64_t const & u64_col_idx, uint64_t const & u64_row_idx);
+
+      void insert_row(uint64_t const & u64_col_idx, uint64_t const & u64_row_idx);
+
    public:
       OCSC() = delete;
 
@@ -49,6 +55,8 @@ class OCSC
       uint64_t get_col_nnz(uint64_t const & u64_col);
 
       std::vector<uint64_t> get_col_row_idxs(uint64_t const & u64_col);
+
+      void add_row_entry(uint64_t const & u64_col_idx, uint64_t const & u64_row_idx);
 
       ~OCSC();
 };
