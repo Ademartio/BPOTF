@@ -3,7 +3,8 @@ from ldpc import bp_decoder
 import numpy as np
 import random
 from quasicyclic import quasi_cyclic_from_params, QuasiCyclic
-# from networkx import find_cycle
+from quasicyclic.quasi_cyclic_phenom import quasi_cyclic_from_params_phenom, QuasiCyclic_phenom
+from decoders.preprocessing import preprocessing
 import networkx as nt
 from copy import deepcopy
 from ldpc import bposd_decoder
@@ -18,7 +19,7 @@ from decoders.UFCLN import UFCLN
 
 
 
-def cln_BB_code(l, m=6):
+def cln_BB_code(p, l, m=6):
 
     """We will use  stim for computing the pcm from the surface code under cln. Then, we attempt to compute
     it with BPOSD and BPBP.
@@ -30,11 +31,18 @@ def cln_BB_code(l, m=6):
     # seed = np.random.randint(2e9)
     max_iter = 30
     
-    qc: QuasiCyclic = quasi_cyclic_from_params(l=l, m=m, A_poly="x^3 + y + y^2", B_poly="y^3 + x + x^2")
-    circuit: stim.Circuit = qc.generate_circuit(
-        measure_basis="Z", 
-        num_rounds=l, 
-        p=p)
+    
+    qc: QuasiCyclic = quasi_cyclic_from_params(l=l, m=6, A_poly="x^3 + y + y^2", B_poly="y^3 + x + x^2")
+    circuit: stim.Circuit = qc.generate_circuit(measure_basis="Z", num_rounds=10, p=p)
+    
+    qc_2: QuasiCyclic_phenom = quasi_cyclic_from_params_phenom(l=l, m=6, A_poly="x^3 + y + y^2", B_poly="y^3 + x + x^2")
+    circuit_2: stim.Circuit = qc_2.generate_circuit(measure_basis="Z", num_rounds=10, p=p)
+    
+    demcln = circuit.detector_error_model(decompose_errors=False)
+    demphen = circuit_2.detector_error_model(decompose_errors=False)
+    
+    # We map the demcln matrix to the demphen p matrix.
+    A = preprocessing(demcln, demphen)
 
     dem = circuit.detector_error_model(decompose_errors=True, ignore_decomposition_failures= True)
     DEM = detector_error_model_to_check_matrices(dem, allow_undecomposed_hyperedges=False)
@@ -98,5 +106,8 @@ def cln_BB_code(l, m=6):
     
     
 if __name__ == "__main__":
+    
+    
+    
     for distance in [6,9,12]:
         cln_BB_code(l=distance)

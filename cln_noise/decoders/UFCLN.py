@@ -8,11 +8,13 @@ class UFCLN:
     
     
     def __init__(self,
-                 dem: stim.DetectorErrorModel,
+                 demcln: stim.DetectorErrorModel,
+                 demphen: stim.DetectorErrorModel,
                  distance: int
                  ):
         
-        self._model = detector_error_model_to_check_matrices(dem)
+        self._model_cln = detector_error_model_to_check_matrices(demcln, allow_undecomposed_hyperedges=True)
+        self._model_phen = detector_error_model_to_check_matrices(demphen, allow_undecomposed_hyperedges=True)
         self.H = self._model.check_matrix
         self.Hedge = self._model.edge_check_matrix
         rank = np.linalg.matrix_rank(self.Hedge.toarray())
