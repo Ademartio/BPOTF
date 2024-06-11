@@ -114,7 +114,7 @@ OBPOTF::OBPOTF(py::array_t<uint8_t, py::array::f_style> const & au8_pcm,
       
       if (u16_count == 1U)
       {
-         if (u16_count < m_u64_pcm_rows / 2) // Take advantage of the integer division truncation.
+         if (ai64_curr_col[0] < m_u64_pcm_rows / 2) // Take advantage of the integer division truncation.
          {
             ai64_curr_col.push_back(m_u64_pcm_rows+1);
          }
