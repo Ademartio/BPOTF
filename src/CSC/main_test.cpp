@@ -49,9 +49,22 @@ int main(void)
    cout << endl << endl;
 
    cout << "Inserting tests:" << endl;
-   o_csc_mat.add_row_entry(2, 5);
-   o_csc_mat.print_csc();
+   o_csc_mat.add_row_idx(5, 2);
+   cout << " - Added an entry\n";
    printMat(o_csc_mat.expand());
+   o_csc_mat.add_row_idx(5, 3);
+   cout << " - Added an entry\n";
+   printMat(o_csc_mat.expand());
+   o_csc_mat.add_row_idx(2, 3);
+   cout << " - Added an entry\n";
+   printMat(o_csc_mat.expand());
+   o_csc_mat.add_row_idx(0, 3);
+   cout << " - Added an entry\n";
+   printMat(o_csc_mat.expand());
+   o_csc_mat.add_row_idx(1, 1);
+   cout << " - Added an entry\n";
+   printMat(o_csc_mat.expand());
+   o_csc_mat.print_csc();
 
    OCSC o_csc_cm_mat(u8_cm_mat_vec, 5);
    cout << "Constructed from Column-Major:\n";

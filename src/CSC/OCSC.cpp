@@ -19,12 +19,31 @@
 /***********************************************************************************************************************
  * PRIVATE FUNCTIONS
  **********************************************************************************************************************/
-void OCSC::push_row(uint64_t const & u64_col_idx, uint64_t const & u64_row_idx)
+void OCSC::add_row_idx_entry(uint64_t const & u64_row_idx, uint64_t const & u64_col_idx)
 {
+   std::vector<uint64_t> au64_col_checks = this->get_col_row_idxs(u64_col_idx);
+   // Check if already exist
+   if (std::find(au64_col_checks.begin(), au64_col_checks.end(), u64_row_idx) != au64_col_checks.end())
+   {
+      return;
+   }
+
    uint64_t * pu64_temp_buffer = new uint64_t[m_u64_nnz+1];
 
-   uint64_t u64_col_nnz = get_col_nnz(u64_col_idx);
-   uint64_t u64_num_entries_until_insert = m_pu64_indptr[u64_col_idx]+u64_col_nnz;
+   uint16_t u16_count = 0;
+   for (uint16_t u16_idx = 0, u16_end_cond = au64_col_checks.size(); u16_idx < u16_end_cond; ++u16_idx)
+   {
+      if (au64_col_checks[u16_idx] < u64_row_idx)
+      {
+         ++u16_count;
+      }
+      else
+      {
+         break;
+      }
+   }
+
+   uint64_t u64_num_entries_until_insert = m_pu64_indptr[u64_col_idx] + u16_count;
    std::memcpy(pu64_temp_buffer, m_pu64_r_indices, u64_num_entries_until_insert * sizeof(uint64_t));
    pu64_temp_buffer[u64_num_entries_until_insert] = u64_row_idx;
    uint64_t u64_rest = m_u64_nnz-u64_num_entries_until_insert;
@@ -41,13 +60,12 @@ void OCSC::push_row(uint64_t const & u64_col_idx, uint64_t const & u64_row_idx)
    }
 
    ++m_u64_nnz;
-   m_u64_m = u64_row_idx+1;
+   if (u64_row_idx+1 > m_u64_m)
+   {
+      m_u64_m = u64_row_idx+1;
+   }
 }
 
-void OCSC::insert_row(uint64_t const & u64_col_idx, uint64_t const & u64_row_idx)
-{
-   
-}
 
 /***********************************************************************************************************************
  * PUBLIC FUNCTIONS
@@ -274,7 +292,7 @@ uint64_t OCSC::get_col_nnz(uint64_t const & u64_col)
 std::vector<uint64_t> OCSC::get_col_row_idxs(uint64_t const & u64_col)
 {
    std::vector<uint64_t> u64_res_vec;
-   uint64_t u64_col_nnz = get_col_nnz(u64_col);
+   uint64_t u64_col_nnz = this->get_col_nnz(u64_col);
    if (u64_col_nnz != 0)
    {
       u64_res_vec.resize(u64_col_nnz);
@@ -287,19 +305,12 @@ std::vector<uint64_t> OCSC::get_col_row_idxs(uint64_t const & u64_col)
    return u64_res_vec;
 }
 
-void OCSC::add_row_entry(uint64_t const & u64_col_idx, uint64_t const & u64_row_idx)
+void OCSC::add_row_idx(uint64_t const & u64_row_idx, uint64_t const & u64_col_idx)
 {
    if (u64_col_idx >= this->m_u64_n)
    {
       throw std::runtime_error("Error. Column index out-of-bounds...");
    }
 
-   if (u64_row_idx >= this->m_u64_m)
-   {
-      this->push_row(u64_col_idx, u64_row_idx);
-   }
-   else
-   {
-      this->insert_row(u64_col_idx, u64_row_idx);
-   }
+   this->add_row_idx_entry(u64_row_idx, u64_col_idx);
 }
