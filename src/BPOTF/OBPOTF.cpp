@@ -90,8 +90,6 @@ OBPOTF::OBPOTF(py::array_t<uint8_t, py::array::f_style> const & au8_pcm,
 
    // Span pointer to the pcm python input to be faster
    std::span<uint8_t> const au8_pcm_sp = toSpan2D(au8_pcm);
-   // Create CSC type object.
-   m_po_csc_mat = new OCSC(au8_pcm_sp, m_u64_pcm_rows);
    // Temporal matrix that holds the row indexes per column
    std::vector<std::vector<int64_t>> aai64_temp_vec;
    // Initialize index matrix rows.
@@ -138,6 +136,27 @@ OBPOTF::OBPOTF(py::array_t<uint8_t, py::array::f_style> const & au8_pcm,
       for (uint64_t u64_idx2 = 0U; u64_idx2 < aai64_temp_vec[u64_idx].size(); u64_idx2++)
       {
          m_ai64_idx_matrix[u64_idx * m_u16_idx_matrix_rows + u64_idx2] = aai64_temp_vec[u64_idx][u64_idx2];
+      }
+   }
+
+   // Create CSC type object.
+   m_po_csc_mat = new OCSC(au8_pcm_sp, m_u64_pcm_rows);
+
+   for (uint64_t u64_idx = 0; u64_idx < m_u64_pcm_cols; ++u64_idx)
+   {
+      std::vector<uint64_t> au64_col_checks = m_po_csc_mat->get_col_row_idxs(u64_idx);
+
+      if (au64_col_checks.size() == 1)
+      {
+         uint64_t u64_check_row = au64_col_checks[0];
+         if (u64_check_row > (m_u64_pcm_rows / 2))
+         {
+            m_po_csc_mat->add_row_idx(u64_idx, m_u64_pcm_rows+1);
+         }
+         else
+         {
+            m_po_csc_mat->add_row_idx(u64_idx, m_u64_pcm_rows+2);
+         }
       }
    }
 
