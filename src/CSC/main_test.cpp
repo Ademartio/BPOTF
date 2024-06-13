@@ -70,6 +70,11 @@ int main(void)
    cout << "Constructed from Column-Major:\n";
    o_csc_cm_mat.print_csc();
 
+   std::span<uint8_t> sp_u8_cm_mat_vec(u8_cm_mat_vec);
+   OCSC o_sp_csc_cm_mat(sp_u8_cm_mat_vec, 5);
+   cout << "Constructed from Column-Major SPAN:\n";
+   o_sp_csc_cm_mat.print_csc();
+
    OCSC o_csc_mat_cp(o_csc_mat);
    cout << "Constructed from Copy constructor:\n";
    o_csc_mat_cp.print_csc();
