@@ -48,7 +48,7 @@ class OBPOTF
 
    std::vector<uint64_t> sort_indexes(py::array_t<double> const & llrs);
 
-   std::vector<std::vector<uint64_t>::iterator> sort_indexes_nc(py::array_t<double> const & llrs);
+   std::vector<uint64_t *> sort_indexes_nc(py::array_t<double> const & llrs);
 
    public:
    /********************************************************************************************************************

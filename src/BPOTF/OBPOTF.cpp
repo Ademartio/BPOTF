@@ -228,15 +228,15 @@ std::vector<uint64_t> OBPOTF::sort_indexes(py::array_t<double> const & llrs)
    return idx;
 }
 
-std::vector<std::vector<uint64_t>::iterator> OBPOTF::sort_indexes_nc(py::array_t<double> const & llrs) 
+std::vector<uint64_t *> OBPOTF::sort_indexes_nc(py::array_t<double> const & llrs) 
 {
-   std::vector<std::vector<uint64_t>::iterator> idx(m_au64_index_array.size());
+   std::vector<uint64_t *> idx(m_au64_index_array.size());
    //std::iota(idx.begin(), idx.end(), m_au64_index_array.begin());
    for (uint64_t u64_idx = 0U; u64_idx < idx.size(); u64_idx++)
-      idx[u64_idx] = m_au64_index_array.begin() + u64_idx;
+      idx[u64_idx] = m_au64_index_array.data() + u64_idx;
 
    std::sort(idx.begin(), idx.end(), 
-               [&llrs](std::vector<uint64_t>::iterator i1, std::vector<uint64_t>::iterator i2) 
+               [&llrs](uint64_t * i1, uint64_t * i2) 
                {
                   return std::less<double>{}(llrs.data()[*i1], llrs.data()[*i2]);
                }
@@ -295,7 +295,7 @@ std::vector<uint64_t> OBPOTF::koh_v2_uf(py::array_t<float> const & llrs)
    columns_chosen.reserve(hog_cols);
 
    //std::vector<uint64_t> sorted_idxs = sort_indexes(llrs);
-   std::vector<std::vector<uint64_t>::iterator> sorted_idxs = sort_indexes_nc(llrs);
+   std::vector<uint64_t *> sorted_idxs = sort_indexes_nc(llrs);
 
    DisjSet clstr_set = DisjSet(m_u64_pcm_rows+2); //+2 due to virtual checks
 
