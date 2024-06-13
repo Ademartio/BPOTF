@@ -46,6 +46,8 @@ class OBPOTF
 
    std::vector<uint64_t> koh_v2_uf(py::array_t<float> const & llrs);
 
+   std::vector<uint64_t> koh_v2_uf_csc(py::array_t<float> const & llrs);
+
    std::vector<uint64_t> sort_indexes(py::array_t<double> const & llrs);
 
    std::vector<uint64_t *> sort_indexes_nc(py::array_t<double> const & llrs);
