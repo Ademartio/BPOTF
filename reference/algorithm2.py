@@ -12,7 +12,8 @@ import time
 
 import csv
 
-from module import BPOTF #bpbp
+#from module import BPOTF #bpbp
+import BPOTF
 
 def error_generation(p, n):
     """Depolarizing error generation
@@ -217,8 +218,8 @@ if __name__ == "__main__":
                 recovered_error = _bp.decode(syndrome)
                 a = time.time()
                 #recovered_error_BPBP, kruskal_time = _uf.decode(syndrome)
-                kruskal_time = 0.0
-                recovered_error_BPBP = _bpotf.decode(syndrome.astype(np.int32), kruskal_time)
+                # kruskal_time = 0.0
+                recovered_error_BPBP = _bpotf.decode(syndrome.astype(np.int32))
                 b = time.time()
                 time_av_BPBP += (b-a)/NMCs[index]
                 times_BPBP[distance].append(b-a)
@@ -237,8 +238,8 @@ if __name__ == "__main__":
                 else:
                     PlBP += 1/NMCs[index]
 
-                if kruskal_time > 0:
-                    kruskal_time_list.append(kruskal_time)
+                # if kruskal_time > 0:
+                #     kruskal_time_list.append(kruskal_time)
                 
             
             PlsBP[distance].append(PlBP)
@@ -255,8 +256,8 @@ if __name__ == "__main__":
             # f.write('Max BPOSD time: {}\n'.format(max(times_BPOSD[distance])))
             # f.write('Max BPBP time: {}\n\n'.format(max(times_BPBP[distance])))
             
-            if len(kruskal_time_list) > 0:
-                print(f'Average Kruskal time {sum(kruskal_time_list)/len(kruskal_time_list)}')
-            print('\n')
+            # if len(kruskal_time_list) > 0:
+            #     print(f'Average Kruskal time {sum(kruskal_time_list)/len(kruskal_time_list)}')
+            # print('\n')
         
     # f.close()
