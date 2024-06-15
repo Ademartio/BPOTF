@@ -305,6 +305,18 @@ std::vector<uint64_t> OCSC::get_col_row_idxs(uint64_t const & u64_col)
    return u64_res_vec;
 }
 
+std::span<uint64_t> OCSC::get_col_row_idxs_fast(uint64_t const & u64_col)
+{
+   std::span<uint64_t> u64_res_sp;
+   uint64_t u64_col_nnz = this->get_col_nnz(u64_col);
+   if (u64_col_nnz != 0)
+   {
+      u64_res_sp = std::span<uint64_t>(&m_pu64_r_indices[m_pu64_indptr[u64_col]], u64_col_nnz);
+   }
+
+   return u64_res_sp;
+}
+
 void OCSC::add_row_idx(uint64_t const & u64_row_idx, uint64_t const & u64_col_idx)
 {
    if (u64_col_idx >= this->m_u64_n)

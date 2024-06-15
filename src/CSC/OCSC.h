@@ -69,6 +69,8 @@ class OCSC
 
       std::vector<uint64_t> get_col_row_idxs(uint64_t const & u64_col);
 
+      std::span<uint64_t> get_col_row_idxs_fast(uint64_t const & u64_col);
+
       void add_row_idx(uint64_t const & u64_row_idx, uint64_t const & u64_col_idx);
 
       ~OCSC();
