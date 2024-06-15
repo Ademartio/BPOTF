@@ -64,7 +64,7 @@ inline static std::span<T> toSpan2D(py::array_t<T, py::array::f_style> const & p
 	if (passthroughBuf.ndim != 2) {
 		throw std::runtime_error("Error. Number of dimensions must be two");
 	}
-	size_t length = passthroughBuf.shape[0] * passthroughBuf.shape[1];
+	uint64_t length = passthroughBuf.shape[0] * passthroughBuf.shape[1];
 	T* passthroughPtr = static_cast<T*>(passthroughBuf.ptr);
 	std::span<T> passthroughSpan(passthroughPtr, length);
 	return passthroughSpan;
@@ -72,7 +72,7 @@ inline static std::span<T> toSpan2D(py::array_t<T, py::array::f_style> const & p
 
 OBPOTF::OBPOTF(py::array_t<uint8_t, py::array::f_style> const & au8_pcm, 
                float const & p)
-:m_p(p)
+               :m_p(p)
 {
    py::buffer_info py_pcm_bufinfo = au8_pcm.request();
 
@@ -114,7 +114,8 @@ OBPOTF::OBPOTF(py::array_t<uint8_t, py::array::f_style> const & au8_pcm,
       
       if (u16_count == 1U)
       {
-         if (ai64_curr_col[0] < m_u64_pcm_rows / 2) // Take advantage of the integer division truncation.
+         // Take advantage of the integer division truncation.
+         if (static_cast<uint64_t>(ai64_curr_col[0]) < m_u64_pcm_rows / 2) 
          {
             ai64_curr_col.push_back(m_u64_pcm_rows);
             m_po_csc_mat->add_row_idx(m_u64_pcm_rows, u64_c_idx);
@@ -219,7 +220,7 @@ std::vector<uint64_t> OBPOTF::sort_indexes(py::array_t<double> const & llrs)
    std::vector<uint64_t> idx = m_au64_index_array;
 
    std::sort(idx.begin(), idx.end(), 
-               [&llrs](size_t i1, size_t i2) 
+               [&llrs](uint64_t i1, uint64_t i2) 
                {
                   return std::less<double>{}(llrs.data()[i1], llrs.data()[i2]);
                }
@@ -251,7 +252,7 @@ std::vector<uint64_t> OBPOTF::koh_v2_classical_uf(py::array_t<double> const & ll
    uint16_t const & hog_rows = m_u16_idx_matrix_rows;
    uint64_t const & hog_cols = m_u64_pcm_cols;
    
-   std::vector<size_t> columns_chosen;
+   std::vector<uint64_t> columns_chosen;
    columns_chosen.reserve(hog_cols);
 
    std::vector<uint64_t> sorted_idxs = sort_indexes(llrs);
@@ -259,16 +260,16 @@ std::vector<uint64_t> OBPOTF::koh_v2_classical_uf(py::array_t<double> const & ll
    DisjSet clstr_set = DisjSet(m_u64_pcm_rows+2);
 
    uint64_t u64_sorted_idxs_sz = sorted_idxs.size();
-   for (size_t col_idx = 0UL; col_idx < u64_sorted_idxs_sz; ++col_idx)
+   for (uint64_t col_idx = 0UL; col_idx < u64_sorted_idxs_sz; ++col_idx)
    {
-      size_t effective_col_idx = sorted_idxs[col_idx];
-      size_t col_offset = effective_col_idx * hog_rows;
+      uint64_t effective_col_idx = sorted_idxs[col_idx];
+      uint64_t col_offset = effective_col_idx * hog_rows;
       std::span<ssize_t> column_sp(m_ai64_idx_matrix.data() + col_offset, hog_rows);
 
       long int retcode = -1;
       long int root_set = clstr_set.find(column_sp[0]);
       uint64_t u64_col_sp_sz = column_sp.size();
-      for (size_t nt_elem_idx = 1UL; nt_elem_idx < u64_col_sp_sz; ++nt_elem_idx)
+      for (uint64_t nt_elem_idx = 1UL; nt_elem_idx < u64_col_sp_sz; ++nt_elem_idx)
       {
          if (column_sp[nt_elem_idx] == -1L)
             break;
@@ -305,9 +306,9 @@ std::vector<uint64_t> OBPOTF::koh_v2_uf(py::array_t<float> const & llrs)
    uint64_t u64_sorted_idxs_sz = sorted_idxs.size();
    for (uint64_t col_idx = 0UL; col_idx < u64_sorted_idxs_sz; ++col_idx)
    {
-      //size_t effective_col_idx = sorted_idxs[col_idx];
-      size_t effective_col_idx = *(sorted_idxs[col_idx]);
-      size_t col_offset = effective_col_idx * hog_rows;
+      //uint64_t effective_col_idx = sorted_idxs[col_idx];
+      uint64_t effective_col_idx = *(sorted_idxs[col_idx]);
+      uint64_t col_offset = effective_col_idx * hog_rows;
       std::span<ssize_t> column_sp(m_ai64_idx_matrix.data() + col_offset, hog_rows);
       
       std::vector<uint8_t> checker(m_u64_pcm_rows+2, 0);
@@ -375,9 +376,10 @@ std::vector<uint64_t> OBPOTF::koh_v2_uf_csc(py::array_t<float> const & llrs)
    uint64_t u64_sorted_idxs_sz = sorted_idxs.size();
    for (uint64_t col_idx = 0UL; col_idx < u64_sorted_idxs_sz; ++col_idx)
    {
-      size_t effective_col_idx = *(sorted_idxs[col_idx]);
+      uint64_t effective_col_idx = *(sorted_idxs[col_idx]);
       //std::span<ssize_t> column_sp(m_ai64_idx_matrix.data() + col_offset, csc_rows);
-      std::vector<uint64_t> column_sp = m_po_csc_mat->get_col_row_idxs(effective_col_idx);
+      //std::vector<uint64_t> column_sp = m_po_csc_mat->get_col_row_idxs(effective_col_idx);
+      std::span<uint64_t> column_sp = m_po_csc_mat->get_col_row_idxs_fast(effective_col_idx);
       
       std::vector<uint8_t> checker(csc_rows, 0);
       std::vector<int> depths = {0, -1, 0};
