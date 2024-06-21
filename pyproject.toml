@@ -15,7 +15,7 @@ authors = [
    { name = "Josu Etxezarreta Martinez", email = "jetxezarreta@unav.es" },
    { name = "Imanol Etxezarreta Martinez", email = "ietxezarretam@gmail.com" }
 ]
-#license = { file = "LICENSE" }
+license = { file = "LICENSE" }
 
 requires-python = ">=3.8"
 dependencies = [

@@ -22,8 +22,8 @@
 [![Forks][forks-shield]][forks-url]
 [![Stargazers][stars-shield]][stars-url]
 [![Issues][issues-shield]][issues-url]
-<!-- [![MIT License][license-shield]][license-url]
-[![LinkedIn][linkedin-shield]][linkedin-url] -->
+[![MIT License][license-shield]][license-url]
+<!-- [![LinkedIn][linkedin-shield]][linkedin-url] -->
 
 
 
@@ -214,7 +214,7 @@ _bpotf.decode(syndrome.astype(np.int32))
 <!-- ROADMAP -->
 ## Roadmap
 
-- [ ] Add a License to the repo.
+- [x] Add a License to the repo.
 - [ ] Add CSC support.
 - [x] Add Pip supported installation method.
 
@@ -243,12 +243,11 @@ Don't forget to give the project a star! Thanks again!
 
 
 <!-- LICENSE -->
-<!-- TO-DO -->
-<!-- ## License
+## License
 
-Distributed under the MIT License. See `LICENSE.txt` for more information.
+Distributed under the MIT License. See `LICENSE` for more information.
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p> -->
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
 
