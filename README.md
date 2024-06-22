@@ -288,7 +288,7 @@ Thanks to the following amazing projects and webs for the help, tools and inform
 [stars-url]: https://github.com/Ademartio/BPBP/stargazers
 [issues-shield]: https://img.shields.io/github/issues/Ademartio/BPBP.svg?style=for-the-badge
 [issues-url]: https://github.com/Ademartio/BPBP/issues
-<!-- [license-shield]: https://img.shields.io/github/license/othneildrew/Best-README-Template.svg?style=for-the-badge
-[license-url]: https://github.com/Ademartio/BPBP/blob/master/LICENSE.txt
-[linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
+[license-shield]: https://img.shields.io/github/license/Ademartio/BPBP.svg?style=for-the-badge
+[license-url]: https://github.com/Ademartio/BPBP/LICENSE
+<!-- [linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
 [linkedin-url]: https://linkedin.com/in/othneildrew -->
