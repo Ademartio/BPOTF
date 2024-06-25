@@ -33,15 +33,7 @@ def error_generation(p, n):
             error[index+n] = 1
     return error.astype(int)
 
-def order_matrix_by_vector(vector, matrix):
-    # Sort the indices of the vector based on its values
-    sorted_indices = np.argsort(vector)
-    # Reorder the columns of the matrix based on the sorted indices
-    ordered_matrix = matrix[:, sorted_indices]
-    return ordered_matrix, sorted_indices
 
-
-def kruskal_on_hypergraph(Hog):
     """
     We now need to produce the Tanner graph via nt.graph
 

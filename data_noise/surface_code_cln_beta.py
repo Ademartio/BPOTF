@@ -29,7 +29,7 @@ def generate_binary_array(p):
     
     return binary_array
     
-def cln_surface_code(distance):
+def cln_surface_code(distance, p):
 
     """We will use  stim for computing the pcm from the surface code under cln. Then, we attempt to compute
     it with BPOSD and BPBP.
@@ -105,9 +105,6 @@ def cln_surface_code(distance):
     time_2 = 0
     
     for index, detection_event in enumerate(detection_events):
-        # error = generate_binary_array(DEM.priors)
-        # logical_error = (DEM.observables_matrix @ error) % 2
-        # syndrome = (pcm @ error) % 2
         a = time.time()
         recovered_1 = decoderBPOSD.decode(detection_event)
         b = time.time()
@@ -120,14 +117,6 @@ def cln_surface_code(distance):
         time_2 += b-a
         if not np.all(observable_flips[index] == recovered_2[0]):
             PlBPBP += 1
-        # if recovered_2[0].shape[0] == error.shape[0]:
-        #     if not np.all(error == recovered_2[0]):
-        #         PlBPBP += 1
-        # else:
-        #     if not np.all(error_edge == recovered_2[0]):
-        #         PlBPBP += 1
-        #         if not recovered_2[2]:
-        #             pass
         recovered_3 = decoderBPBPog.decode(detection_event)
         if not np.all(observable_flips[index] == (DEM.observables_matrix @ recovered_3[0]) % 2):
             PlBPBP2 += 1
@@ -144,5 +133,7 @@ def cln_surface_code(distance):
     
     
 if __name__ == "__main__":
+    ps = np.linspace(0.001, 0.01, num = 10)
     for distance in [3,5,7,9]:
-        cln_surface_code(distance)
+        for p in ps:
+            cln_surface_code(distance,p)
