@@ -1,12 +1,20 @@
 from qecsim.models.rotatedplanar import RotatedPlanarCode
-from ldpc import bp_decoder
+from packaging.version import Version
+from ldpc import __version__ as ldpc_version
+ldpc_v2 = Version(ldpc_version) >= Version("2.0.0")
+print("Using LDPC version v{}".format(ldpc_version))
+if ldpc_v2 is True:
+    from ldpc import BpDecoder
+    from ldpc import BpOsdDecoder
+else:
+    from ldpc import bp_decoder
+    from ldpc import bposd_decoder
 import numpy as np
 import random
 from qecsim import paulitools as pt
 # from networkx import find_cycle
 import networkx as nt
 from copy import deepcopy
-from ldpc import bposd_decoder
 #from UF import UF
 import time
 
@@ -135,9 +143,9 @@ def kruskal_on_hypergraph(Hog):
         
     
 if __name__ == "__main__":
-    distances = [3]
+    # distances = [3]
     #distances = [11]
-    #distances = [3, 5, 7, 9, 11]
+    distances = [3, 5, 7, 9, 11]
     NMCs = [10**4, 10**4, 10**4, 10**4, 10**4, 10**4, 10**4, 10**4, 10**4, 10**3, 10**3, 10**3, 10**3]
     ps = np.linspace(0.01, 0.13, num=13)
     PlsBP = {}
@@ -167,25 +175,36 @@ if __name__ == "__main__":
         print('-------------------------------------------------')
         for index, p in enumerate(ps):
         
-            _bp = bp_decoder(
-                pcm,
-                max_iter=30,
-                error_rate = p
-            )
-            
-            _bposd = bposd_decoder(
-                pcm,
-                max_iter=30,
-                error_rate = p,
-                osd_method = "osd_0"
-            )
+            if ldpc_v2 is True:
+                _bp = BpDecoder(
+                        pcm,
+                        error_rate = float(p)
+                )
+
+                _bposd = BpOsdDecoder(
+                    pcm,
+                    error_rate= float(p)
+                )
+            else:
+                _bp = bp_decoder(
+                    pcm,
+                    max_iter=30,
+                    error_rate = p
+                )
+                
+                _bposd = bposd_decoder(
+                    pcm,
+                    max_iter=30,
+                    error_rate = p,
+                    osd_method = "osd_0"
+                )
+
             
             # _uf = UF(
             #     pcm,
             #     p
             # )
 
-            #_bpotf = bpbp.OBPOTF(
             _bpotf = BPOTF.OBPOTF(
                 pcm.astype(np.uint8), 
                 p
@@ -219,7 +238,8 @@ if __name__ == "__main__":
                 a = time.time()
                 #recovered_error_BPBP, kruskal_time = _uf.decode(syndrome)
                 # kruskal_time = 0.0
-                recovered_error_BPBP = _bpotf.decode(syndrome.astype(np.int32))
+                # recovered_error_BPBP = _bpotf.decode(syndrome.astype(np.int32))
+                recovered_error_BPBP = _bpotf.decode(syndrome.astype(np.uint8))
                 b = time.time()
                 time_av_BPBP += (b-a)/NMCs[index]
                 times_BPBP[distance].append(b-a)
