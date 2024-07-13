@@ -18,9 +18,7 @@ authors = [
 license = { file = "LICENSE" }
 
 requires-python = ">=3.8"
-dependencies = [
-   "ldpc"
-]
+dependencies = []
 version = "0.0.1"
 
 [tool.setuptools.packages.find]
