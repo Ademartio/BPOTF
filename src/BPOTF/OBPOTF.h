@@ -26,6 +26,8 @@
 // Custom includes
 #include "CSC/OCSC.h"
 
+#include "../ldpc_v2_src/bp.hpp"
+
 namespace py = pybind11;
 
 class OBPOTF
@@ -36,21 +38,26 @@ class OBPOTF
    uint64_t m_u64_pcm_cols;   // Parity check matrix number of columns.
    std::vector<int64_t> m_ai64_idx_matrix; // Row indexes per column where a non-trivial element is located in the pcm.
    uint16_t m_u16_idx_matrix_rows;  // Row number of m_ai64_idx_matrix. Columns will be m_u64_pcm_cols.
-   OCSC * m_po_csc_mat; // Matrix in Compressed-Sparse-Column format.
-   std::vector<uint64_t> m_au64_index_array; // Array that holds indexes from 0 to m_u64_pcm_cols-1 to be sorted
 
-   py::object m_bpd; // Python class object from ldpc for decoding
-   py::object m_bpd_secondary; // Python class object from ldpc for decoding
+   OCSC * m_po_csc_mat = nullptr; // Matrix in Compressed-Sparse-Column format.
+
+   ldpc::bp::BpSparse * m_po_bpsparse = nullptr; // Pointer to the pcm in format for BpDecoder object
+   ldpc::bp::BpDecoder * m_po_primary_bp = nullptr; // Pointer to primary BP decoder object.
+   ldpc::bp::BpDecoder * m_po_secondary_bp = nullptr; // Pointer to secondary BP decoder in case the first one fails and Kruskal is needed.
+
+   std::vector<uint64_t> m_au64_index_array; // Array that holds indexes from 0 to m_u64_pcm_cols-1 to be sorted
 
    std::vector<uint64_t> koh_v2_classical_uf(py::array_t<double> const & llrs);
 
    std::vector<uint64_t> koh_v2_uf(py::array_t<float> const & llrs);
 
    std::vector<uint64_t> koh_v2_uf_csc(py::array_t<float> const & llrs);
+   std::vector<uint64_t> koh_v2_uf_csc(std::vector<double> const & llrs);
 
    std::vector<uint64_t> sort_indexes(py::array_t<double> const & llrs);
 
    std::vector<uint64_t *> sort_indexes_nc(py::array_t<double> const & llrs);
+   std::vector<uint64_t *> sort_indexes_nc(std::vector<double> const & llrs);
 
    public:
    /********************************************************************************************************************
@@ -72,7 +79,7 @@ class OBPOTF
     *******************************************************************************************************************/
    ~OBPOTF();
 
-   py::array_t<uint8_t> decode(py::array_t<int, py::array::c_style> syndrome);
+   py::array_t<uint8_t> decode(py::array_t<uint8_t, py::array::c_style> syndrome);
 
    /********************************************************************************************************************
     * @brief Prints the object's member. Developing purposes and testing.
