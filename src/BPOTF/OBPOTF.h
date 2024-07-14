@@ -36,8 +36,6 @@ class OBPOTF
    float const m_p;  // Error probabilities.
    uint64_t m_u64_pcm_rows;   // Parity check matrix number of rows.
    uint64_t m_u64_pcm_cols;   // Parity check matrix number of columns.
-   std::vector<int64_t> m_ai64_idx_matrix; // Row indexes per column where a non-trivial element is located in the pcm.
-   uint16_t m_u16_idx_matrix_rows;  // Row number of m_ai64_idx_matrix. Columns will be m_u64_pcm_cols.
 
    OCSC * m_po_csc_mat = nullptr; // Matrix in Compressed-Sparse-Column format.
 
@@ -47,16 +45,13 @@ class OBPOTF
 
    std::vector<uint64_t> m_au64_index_array; // Array that holds indexes from 0 to m_u64_pcm_cols-1 to be sorted
 
-   std::vector<uint64_t> koh_v2_classical_uf(py::array_t<double> const & llrs);
+   private:
+   std::vector<uint64_t> koh_v2_classical_uf(std::vector<double> const & llrs);
 
-   std::vector<uint64_t> koh_v2_uf(py::array_t<float> const & llrs);
-
-   std::vector<uint64_t> koh_v2_uf_csc(py::array_t<float> const & llrs);
-   std::vector<uint64_t> koh_v2_uf_csc(std::vector<double> const & llrs);
+   std::vector<uint64_t> koh_v2_uf(std::vector<double> const & llrs);
 
    std::vector<uint64_t> sort_indexes(py::array_t<double> const & llrs);
 
-   std::vector<uint64_t *> sort_indexes_nc(py::array_t<double> const & llrs);
    std::vector<uint64_t *> sort_indexes_nc(std::vector<double> const & llrs);
 
    public:
