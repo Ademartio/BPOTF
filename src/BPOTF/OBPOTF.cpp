@@ -118,11 +118,6 @@ OBPOTF::OBPOTF(py::array_t<uint8_t, py::array::f_style> const & au8_pcm,
                                                 ldpc::bp::NULL_INT_VECTOR,
                                                 0, true, ldpc::bp::SYNDROME);
 
-   // Temporal matrix that holds the row indexes per column
-   std::vector<std::vector<int64_t>> aai64_temp_vec;
-   // Initialize index matrix rows.
-   m_u16_idx_matrix_rows = 0U;
-
    // Iterate through the pcm to get the non-trivial row indexes and maximum number of nt per column.
    for (uint64_t u64_c_idx = 0UL; u64_c_idx < m_u64_pcm_cols; ++u64_c_idx)
    {
@@ -144,32 +139,12 @@ OBPOTF::OBPOTF(py::array_t<uint8_t, py::array::f_style> const & au8_pcm,
          // Take advantage of the integer division truncation.
          if (static_cast<uint64_t>(ai64_curr_col[0]) < m_u64_pcm_rows / 2) 
          {
-            ai64_curr_col.push_back(m_u64_pcm_rows);
             m_po_csc_mat->add_row_idx(m_u64_pcm_rows, u64_c_idx);
          }
          else
          {
-            ai64_curr_col.push_back(m_u64_pcm_rows+1);
             m_po_csc_mat->add_row_idx(m_u64_pcm_rows+1, u64_c_idx);
          }
-      }
-      aai64_temp_vec.push_back(ai64_curr_col);
-
-      if (u16_count > m_u16_idx_matrix_rows)
-      {
-         m_u16_idx_matrix_rows = u16_count;
-      }
-   }
-
-   // Initialize the index_matrix to be idx_matrix_rows x pcm_cols of -1s, and fill it in the loop
-   m_ai64_idx_matrix = std::vector<int64_t>(m_u64_pcm_cols*m_u16_idx_matrix_rows, -1L);
-   uint64_t u64_end_cond1 = aai64_temp_vec.size();
-   for (uint64_t u64_idx = 0U; u64_idx < u64_end_cond1; ++u64_idx)
-   {
-      uint64_t u64_end_cond2 = aai64_temp_vec[u64_idx].size();
-      for (uint64_t u64_idx2 = 0U; u64_idx2 < u64_end_cond2; ++u64_idx2)
-      {
-         m_ai64_idx_matrix[u64_idx * m_u16_idx_matrix_rows + u64_idx2] = aai64_temp_vec[u64_idx][u64_idx2];
       }
    }
 }
@@ -178,15 +153,6 @@ void OBPOTF::print_object(void)
 {
    std::cout << "m_u64_pcm_rows: " << m_u64_pcm_rows << std::endl;
    std::cout << "m_u64_pcm_cols: " << m_u64_pcm_cols << std::endl;
-   std::cout << "m_ai64_idx_matrix: " << std::endl;
-   for (uint64_t u64_idx = 0U; u64_idx < m_u16_idx_matrix_rows; ++u64_idx)
-   {
-      for (uint64_t u64_idx2 = 0U; u64_idx2 < m_u64_pcm_cols; ++u64_idx2)
-      {
-         std::cout << m_ai64_idx_matrix[u64_idx2*m_u16_idx_matrix_rows+u64_idx] << " ";
-      }
-      std::cout << std::endl;
-   }
 
    std::cout << "m_au64_index_array: " << std::endl;
    for (uint64_t u64_idx = 0U; u64_idx < m_u64_pcm_cols; ++u64_idx)
@@ -217,9 +183,7 @@ py::array_t<uint8_t> OBPOTF::decode(py::array_t<uint8_t, py::array::c_style> syn
    {
       std::vector<double> llrs = m_po_primary_bp->log_prob_ratios;
 
-      //std::vector<uint64_t> columns_chosen = koh_v2_classical_uf(llrs);
-      //std::vector<uint64_t> columns_chosen = koh_v2_uf(llrs); // --> Currently fastest --> Not sure
-      std::vector<uint64_t> columns_chosen = koh_v2_uf_csc(llrs);
+      std::vector<uint64_t> columns_chosen = koh_v2_uf(llrs);
 
       std::vector<double> updated_probs(m_u64_pcm_cols, 0.0);
       uint64_t u64_col_chosen_sz = columns_chosen.size();
@@ -248,24 +212,6 @@ std::vector<uint64_t> OBPOTF::sort_indexes(py::array_t<double> const & llrs)
    return idx;
 }
 
-std::vector<uint64_t *> OBPOTF::sort_indexes_nc(py::array_t<double> const & llrs) 
-{
-   std::vector<uint64_t *> idx(m_au64_index_array.size());
-   //std::iota(idx.begin(), idx.end(), m_au64_index_array.begin());
-   uint64_t u64_idx_sz = idx.size();
-   for (uint64_t u64_idx = 0U; u64_idx < u64_idx_sz; ++u64_idx)
-      idx[u64_idx] = m_au64_index_array.data() + u64_idx;
-
-   std::sort(idx.begin(), idx.end(), 
-               [&llrs](uint64_t * i1, uint64_t * i2) 
-               {
-                  return std::less<double>{}(llrs.data()[*i1], llrs.data()[*i2]);
-               }
-            );
-
-   return idx;
-}
-
 std::vector<uint64_t *> OBPOTF::sort_indexes_nc(std::vector<double> const & llrs) 
 {
    std::vector<uint64_t *> idx(m_au64_index_array.size());
@@ -284,24 +230,24 @@ std::vector<uint64_t *> OBPOTF::sort_indexes_nc(std::vector<double> const & llrs
    return idx;
 }
 
-std::vector<uint64_t> OBPOTF::koh_v2_classical_uf(py::array_t<double> const & llrs)
+std::vector<uint64_t> OBPOTF::koh_v2_classical_uf(std::vector<double> const & llrs)
 {
-   uint16_t const & hog_rows = m_u16_idx_matrix_rows;
+   uint16_t const & hog_rows = m_po_csc_mat->get_row_num();
    uint64_t const & hog_cols = m_u64_pcm_cols;
    
    std::vector<uint64_t> columns_chosen;
    columns_chosen.reserve(hog_cols);
 
-   std::vector<uint64_t> sorted_idxs = sort_indexes(llrs);
+   std::vector<uint64_t *> sorted_idxs = sort_indexes_nc(llrs);
 
-   DisjSet clstr_set = DisjSet(m_u64_pcm_rows+2);
+   DisjSet clstr_set = DisjSet(m_u64_pcm_rows);
 
    uint64_t u64_sorted_idxs_sz = sorted_idxs.size();
    for (uint64_t col_idx = 0UL; col_idx < u64_sorted_idxs_sz; ++col_idx)
    {
-      uint64_t effective_col_idx = sorted_idxs[col_idx];
+      uint64_t effective_col_idx = *(sorted_idxs[col_idx]);
       uint64_t col_offset = effective_col_idx * hog_rows;
-      std::span<ssize_t> column_sp(m_ai64_idx_matrix.data() + col_offset, hog_rows);
+      std::span<uint64_t> column_sp = m_po_csc_mat->get_col_row_idxs_fast(effective_col_idx);
 
       long int retcode = -1;
       long int root_set = clstr_set.find(column_sp[0]);
@@ -327,146 +273,7 @@ std::vector<uint64_t> OBPOTF::koh_v2_classical_uf(py::array_t<double> const & ll
    return columns_chosen;
 }
 
-std::vector<uint64_t> OBPOTF::koh_v2_uf(py::array_t<float> const & llrs)
-{
-   uint16_t const & hog_rows = m_u16_idx_matrix_rows;
-   uint64_t const & hog_cols = m_u64_pcm_cols;
-   
-   std::vector<uint64_t> columns_chosen;
-   columns_chosen.reserve(hog_cols);
-
-   //std::vector<uint64_t> sorted_idxs = sort_indexes(llrs);
-   std::vector<uint64_t *> sorted_idxs = sort_indexes_nc(llrs);
-
-   DisjSet clstr_set = DisjSet(m_u64_pcm_rows+2); //+2 due to virtual checks
-
-   uint64_t u64_sorted_idxs_sz = sorted_idxs.size();
-   for (uint64_t col_idx = 0UL; col_idx < u64_sorted_idxs_sz; ++col_idx)
-   {
-      //uint64_t effective_col_idx = sorted_idxs[col_idx];
-      uint64_t effective_col_idx = *(sorted_idxs[col_idx]);
-      uint64_t col_offset = effective_col_idx * hog_rows;
-      std::span<ssize_t> column_sp(m_ai64_idx_matrix.data() + col_offset, hog_rows);
-      
-      std::vector<uint8_t> checker(m_u64_pcm_rows+2, 0);
-      std::vector<int> depths = {0, -1, 0};
-      bool boolean_condition = true;
-
-      uint64_t u64_col_sp_sz = column_sp.size();
-      for (uint64_t nt_elem_idx = 0UL; nt_elem_idx < u64_col_sp_sz; ++nt_elem_idx)
-      {
-         if (column_sp[nt_elem_idx] == -1L)
-            break;
-         int elem_root = clstr_set.find(column_sp[nt_elem_idx]);
-         int elem_depth = clstr_set.get_rank(elem_root);
-
-         if (checker[elem_root] == 1U)
-         {
-            boolean_condition = false;
-            break;
-         }
-         checker[elem_root] = 1U;
-
-         if (elem_depth > depths[1])
-         {
-            depths = {elem_root, elem_depth, 0};
-         }
-         if (elem_depth == depths[1])
-         {
-            depths[2] = 1;
-         }
-      }
-
-      if (boolean_condition == true)
-      {
-         uint64_t u64_checker_sz = checker.size(); 
-         for(uint64_t elem = 0UL; elem < u64_checker_sz; ++elem)
-         {
-            if (checker[elem] == 1U)
-               clstr_set.set_parent(elem, depths[0]);
-         }
-         columns_chosen.push_back(effective_col_idx);
-         if (depths[2] == 1)
-         {
-            clstr_set.increase_rank(depths[0]);
-         }
-         // if (columns_chosen.size() == rank)
-         //    break;
-      }
-   }
-
-   return columns_chosen;
-}
-
-std::vector<uint64_t> OBPOTF::koh_v2_uf_csc(py::array_t<float> const & llrs)
-{
-   uint16_t const & csc_rows = m_po_csc_mat->get_row_num(); // Already accounts for virtual checks
-   uint64_t const & csc_cols = m_po_csc_mat->get_col_num();
-   
-   std::vector<uint64_t> columns_chosen;
-   columns_chosen.reserve(csc_cols);
-
-   std::vector<uint64_t *> sorted_idxs = sort_indexes_nc(llrs);
-
-   DisjSet clstr_set = DisjSet(csc_rows);
-
-   uint64_t u64_sorted_idxs_sz = sorted_idxs.size();
-   for (uint64_t col_idx = 0UL; col_idx < u64_sorted_idxs_sz; ++col_idx)
-   {
-      uint64_t effective_col_idx = *(sorted_idxs[col_idx]);
-      //std::span<ssize_t> column_sp(m_ai64_idx_matrix.data() + col_offset, csc_rows);
-      //std::vector<uint64_t> column_sp = m_po_csc_mat->get_col_row_idxs(effective_col_idx);
-      std::span<uint64_t> column_sp = m_po_csc_mat->get_col_row_idxs_fast(effective_col_idx);
-      
-      std::vector<uint8_t> checker(csc_rows, 0);
-      std::vector<int> depths = {0, -1, 0};
-      bool boolean_condition = true;
-
-      uint64_t u64_col_sp_sz = column_sp.size();
-      for (uint64_t nt_elem_idx = 0UL; nt_elem_idx < u64_col_sp_sz; ++nt_elem_idx)
-      {
-         int elem_root = clstr_set.find(column_sp[nt_elem_idx]);
-         int elem_depth = clstr_set.get_rank(elem_root);
-
-         if (checker[elem_root] == 1U)
-         {
-            boolean_condition = false;
-            break;
-         }
-         checker[elem_root] = 1U;
-
-         if (elem_depth > depths[1])
-         {
-            depths = {elem_root, elem_depth, 0};
-         }
-         if (elem_depth == depths[1])
-         {
-            depths[2] = 1;
-         }
-      }
-
-      if (boolean_condition == true)
-      {
-         uint64_t u64_checker_sz = checker.size();
-         for(uint64_t elem = 0UL; elem < u64_checker_sz; ++elem)
-         {
-            if (checker[elem] == 1U)
-               clstr_set.set_parent(elem, depths[0]);
-         }
-         columns_chosen.push_back(effective_col_idx);
-         if (depths[2] == 1)
-         {
-            clstr_set.increase_rank(depths[0]);
-         }
-         // if (columns_chosen.size() == rank)
-         //    break;
-      }
-   }
-
-   return columns_chosen;
-}
-
-std::vector<uint64_t> OBPOTF::koh_v2_uf_csc(std::vector<double> const & llrs)
+std::vector<uint64_t> OBPOTF::koh_v2_uf(std::vector<double> const & llrs)
 {
    uint16_t const & csc_rows = m_po_csc_mat->get_row_num(); // Already accounts for virtual checks
    uint64_t const & csc_cols = m_po_csc_mat->get_col_num();
