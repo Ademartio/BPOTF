@@ -14,20 +14,24 @@
 #include <numeric>
 #include <span>
 #include <iostream>
-#include <chrono>
 
 #if defined(_MSC_VER)
 #include <BaseTsd.h>
 typedef SSIZE_T ssize_t;
 #endif
 
-#include <pybind11/embed.h>
-
 #include "OBPOTF.h"
 #include "DisjointSet/DisjointSet.h"
 #include "CSC/OCSC.h"
 
 using namespace py::literals;
+
+
+/***********************************************************************************************************************
+ * FILE GLOBAL VARIABLES
+ **********************************************************************************************************************/
+// Import scipy.sparse.csc_matrix type 
+static py::object vf_scipy_csc_type = py::module_::import("scipy.sparse").attr("csc_matrix");
 
 /***********************************************************************************************************************
  * Helper functions
@@ -58,7 +62,7 @@ inline static py::array_t<typename Sequence::value_type> as_pyarray(Sequence &&s
  * \return Span<T> that with a clean and safe reference to contents of Numpy array.
  */
 template<typename T>
-inline static std::span<T> toSpan2D(py::array_t<T, py::array::f_style> const & passthrough)
+inline static std::span<T> toSpan2D(py::array_t<T, F_FMT> const & passthrough)
 {
 	py::buffer_info passthroughBuf = passthrough.request();
 	if (passthroughBuf.ndim != 2) {
@@ -70,9 +74,36 @@ inline static std::span<T> toSpan2D(py::array_t<T, py::array::f_style> const & p
 	return passthroughSpan;
 }
 
-OBPOTF::OBPOTF(py::array_t<uint8_t, py::array::f_style> const & au8_pcm, 
-               float const & p)
-               :m_p(p)
+/***********************************************************************************************************************
+ * CLASS METHODS
+ **********************************************************************************************************************/
+OBPOTF::OBPOTF(py::object const & au8_pcm, float const & p)
+   :m_p(p)
+{
+   if (true == py::isinstance<py::array_t<uint8_t>>(au8_pcm))
+   {
+      this->OBPOTF_init_from_numpy(au8_pcm);
+   }
+   else if (true == py::isinstance(au8_pcm, vf_scipy_csc_type))
+   {
+     this->OBPOTF_init_from_scipy_csc(au8_pcm);
+   }
+   else
+   {
+      throw std::runtime_error("Input type not supported! Input type must be ndarray of uint8 or"
+                               "scipy.sparse.csc_matrix...");
+   }
+}
+
+void OBPOTF::OBPOTF_init_from_scipy_csc(py::object const & au8_pcm)
+{
+   py::object dense_mat = au8_pcm.attr("toarray")();
+   py::array_t<uint8_t, F_FMT> au8_pcm_pyarr = dense_mat.attr("astype")("uint8");
+
+   this->OBPOTF_init_from_numpy(au8_pcm_pyarr);
+}
+
+void OBPOTF::OBPOTF_init_from_numpy(py::array_t<uint8_t, F_FMT> const & au8_pcm)
 {
    py::buffer_info py_pcm_bufinfo = au8_pcm.request();
 
@@ -174,7 +205,7 @@ void OBPOTF::print_object(void)
 
 }
 
-py::array_t<uint8_t> OBPOTF::decode(py::array_t<uint8_t, py::array::c_style> syndrome)
+py::array_t<uint8_t> OBPOTF::decode(py::array_t<uint8_t, C_FMT> syndrome)
 {
    std::vector<uint8_t> u8_syndrome(syndrome.data(), syndrome.data() + syndrome.size());
    std::vector<uint8_t> u8_recovered_err = m_po_primary_bp->decode(u8_syndrome);
@@ -183,7 +214,7 @@ py::array_t<uint8_t> OBPOTF::decode(py::array_t<uint8_t, py::array::c_style> syn
    {
       std::vector<double> llrs = m_po_primary_bp->log_prob_ratios;
 
-      std::vector<uint64_t> columns_chosen = koh_v2_uf(llrs);
+      std::vector<uint64_t> columns_chosen = this->koh_v2_uf(llrs);
 
       std::vector<double> updated_probs(m_u64_pcm_cols, 0.0);
       uint64_t u64_col_chosen_sz = columns_chosen.size();
@@ -238,7 +269,7 @@ std::vector<uint64_t> OBPOTF::koh_v2_classical_uf(std::vector<double> const & ll
    std::vector<uint64_t> columns_chosen;
    columns_chosen.reserve(hog_cols);
 
-   std::vector<uint64_t *> sorted_idxs = sort_indexes_nc(llrs);
+   std::vector<uint64_t *> sorted_idxs = this->sort_indexes_nc(llrs);
 
    DisjSet clstr_set = DisjSet(m_u64_pcm_rows);
 
@@ -281,7 +312,7 @@ std::vector<uint64_t> OBPOTF::koh_v2_uf(std::vector<double> const & llrs)
    std::vector<uint64_t> columns_chosen;
    columns_chosen.reserve(csc_cols);
 
-   std::vector<uint64_t *> sorted_idxs = sort_indexes_nc(llrs);
+   std::vector<uint64_t *> sorted_idxs = this->sort_indexes_nc(llrs);
 
    DisjSet clstr_set = DisjSet(csc_rows);
 

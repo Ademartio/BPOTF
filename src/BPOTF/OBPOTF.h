@@ -30,6 +30,9 @@
 
 namespace py = pybind11;
 
+#define C_FMT py::array::c_style
+#define F_FMT py::array::f_style
+
 class OBPOTF
 {
    private:
@@ -62,7 +65,11 @@ class OBPOTF
     *                avoid copying the matrix.
     * @param p[in]   Phisical error to initialize the bp_decoder.
     *******************************************************************************************************************/
-   OBPOTF(py::array_t<uint8_t, py::array::f_style> const & pcm, float const & p);
+   OBPOTF(py::object const & pcm, float const & p);
+
+   void OBPOTF_init_from_numpy(py::array_t<uint8_t, F_FMT> const & pcm);
+   
+   void OBPOTF_init_from_scipy_csc(py::object const & pcm);
 
    /********************************************************************************************************************
     * @brief Delete default constructor, to avoid empty objects.
@@ -74,7 +81,7 @@ class OBPOTF
     *******************************************************************************************************************/
    ~OBPOTF();
 
-   py::array_t<uint8_t> decode(py::array_t<uint8_t, py::array::c_style> syndrome);
+   py::array_t<uint8_t> decode(py::array_t<uint8_t, C_FMT> syndrome);
 
    /********************************************************************************************************************
     * @brief Prints the object's member. Developing purposes and testing.
