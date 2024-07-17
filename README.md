@@ -30,7 +30,7 @@
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
-  <a href="https://github.com/Ademartio/BPBP/tree/OBPOTF">
+  <a href="https://github.com/Ademartio/BPOTF/tree/OBPOTF">
     <img src=".github/imgs/BPOTF_logo.jpg" alt="Logo" width="160" height="160">
   </a>
 
@@ -39,9 +39,9 @@
   <p align="center">
     Belief Propagation Ordered Tanner Forest decoder
     <br />
-    <a href="https://github.com/Ademartio/BPBP/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
+    <a href="https://github.com/Ademartio/BPOTF/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
     ·
-    <a href="https://github.com/Ademartio/BPBP/issues/new?labels=enhancement&template=feature-request---.md">Request Feature</a>
+    <a href="https://github.com/Ademartio/BPOTF/issues/new?labels=enhancement&template=feature-request---.md">Request Feature</a>
   </p>
 </div>
 
@@ -127,8 +127,8 @@ This compilation option uses the Makefile located in the root folder of the proj
 
 1. Clone the git repository and navigate to the directory.
    ```sh
-   git clone https://github.com/Ademartio/BPBP.git
-   cd BPBP
+   git clone https://github.com/Ademartio/BPOTF.git
+   cd BPOTF
    ```
 2. Once in the root folder of the repository, and the prerequisites necessary for the compilation in this mode are properly installed, the make command should compile and generate a python importable module in the folder `module`:
    ```sh
@@ -141,8 +141,8 @@ The steps to compile the python importable BPOTF module using this method are ex
 
 1. Clone the git repository and navigate to the directory.
    ```sh
-   git clone https://github.com/Ademartio/BPBP.git
-   cd BPBP
+   git clone https://github.com/Ademartio/BPOTF.git
+   cd BPOTF
    ```
 2. Create a new build folder and navigate to it.
    ```sh
@@ -161,8 +161,8 @@ To compile the python importable module using pip, the only requisite is to have
 
 1. Clone the git repository and navigate to the directory.
    ```sh
-   git clone https://github.com/Ademartio/BPBP.git
-   cd BPBP
+   git clone https://github.com/Ademartio/BPOTF.git
+   cd BPOTF
    ```
 2. (Optional) It is recommended to create a virtual environment to install python packages local to the project.
    ```sh
@@ -218,7 +218,7 @@ _bpotf.decode(syndrome.astype(np.int32))
 - [ ] Add CSC support.
 - [x] Add Pip supported installation method.
 
-See the [open issues](https://github.com/Ademartio/BPBP/issues) for a full list of proposed features (and known issues).
+See the [open issues](https://github.com/Ademartio/BPOTF/issues) for a full list of proposed features (and known issues).
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -259,7 +259,7 @@ Distributed under the MIT License. See `LICENSE` for more information.
 * _Imanol Etxezarreta_ - ietxezarretam@gmail.com
 
 
-Project Link: [https://github.com/Ademartio/BPBP](https://github.com/Ademartio/BPBP)
+Project Link: [https://github.com/Ademartio/BPOTF](https://github.com/Ademartio/BPOTF)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -280,15 +280,15 @@ Thanks to the following amazing projects and webs for the help, tools and inform
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[contributors-shield]: https://img.shields.io/github/contributors/Ademartio/BPBP.svg?style=for-the-badge
-[contributors-url]: https://github.com/Ademartio/BPBP/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/Ademartio/BPBP.svg?style=for-the-badge
-[forks-url]: https://github.com/Ademartio/BPBP/network/members
-[stars-shield]: https://img.shields.io/github/stars/Ademartio/BPBP.svg?style=for-the-badge
-[stars-url]: https://github.com/Ademartio/BPBP/stargazers
-[issues-shield]: https://img.shields.io/github/issues/Ademartio/BPBP.svg?style=for-the-badge
-[issues-url]: https://github.com/Ademartio/BPBP/issues
-[license-shield]: https://img.shields.io/github/license/Ademartio/BPBP.svg?style=for-the-badge
-[license-url]: https://github.com/Ademartio/BPBP/LICENSE
+[contributors-shield]: https://img.shields.io/github/contributors/Ademartio/BPOTF.svg?style=for-the-badge
+[contributors-url]: https://github.com/Ademartio/BPOTF/graphs/contributors
+[forks-shield]: https://img.shields.io/github/forks/Ademartio/BPOTF.svg?style=for-the-badge
+[forks-url]: https://github.com/Ademartio/BPOTF/network/members
+[stars-shield]: https://img.shields.io/github/stars/Ademartio/BPOTF.svg?style=for-the-badge
+[stars-url]: https://github.com/Ademartio/BPOTF/stargazers
+[issues-shield]: https://img.shields.io/github/issues/Ademartio/BPOTF.svg?style=for-the-badge
+[issues-url]: https://github.com/Ademartio/BPOTF/issues
+[license-shield]: https://img.shields.io/github/license/Ademartio/BPOTF.svg?style=for-the-badge
+[license-url]: https://github.com/Ademartio/BPOTF/LICENSE
 <!-- [linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
 [linkedin-url]: https://linkedin.com/in/othneildrew -->
