@@ -23,6 +23,8 @@ import csv
 #from module import BPOTF #bpbp
 import BPOTF
 
+from scipy import sparse
+
 def error_generation(p, n):
     """Depolarizing error generation
 
@@ -205,8 +207,10 @@ if __name__ == "__main__":
             #     p
             # )
 
+            # pcm = pcm.astype(np.uint8)
+            pcm = sparse.csc_matrix(pcm, dtype=np.uint8)
             _bpotf = BPOTF.OBPOTF(
-                pcm.astype(np.uint8), 
+                pcm,
                 p
             )
             
@@ -214,7 +218,9 @@ if __name__ == "__main__":
             PlBPBP = 0
             PlBPOSD = 0
             time_av_BPOSD = 0
+            time_max_BPOSD = 0
             time_av_BPBP = 0
+            time_max_BPOTF = 0
             kruskal_time_list = []
             
             #print(pcm)
@@ -234,7 +240,10 @@ if __name__ == "__main__":
                 b = time.time()
                 time_av_BPOSD += (b-a)/NMCs[index]
                 times_BPOSD[distance].append(b-a)
+                time_max_BPOSD = max(time_max_BPOSD, (b-a))
+
                 recovered_error = _bp.decode(syndrome)
+
                 a = time.time()
                 #recovered_error_BPBP, kruskal_time = _uf.decode(syndrome)
                 # kruskal_time = 0.0
@@ -243,6 +252,7 @@ if __name__ == "__main__":
                 b = time.time()
                 time_av_BPBP += (b-a)/NMCs[index]
                 times_BPBP[distance].append(b-a)
+                time_max_BPOTF = max(time_max_BPOTF, (b-a))
                 
                 if np.any(pt.bsp(recovered_error_BPOSD ^ error, myCode.logicals.T) == 1):
                     PlBPOSD += 1/NMCs[index]
@@ -268,8 +278,8 @@ if __name__ == "__main__":
                 
             print(f'Physical error: {p}')
             print(f'Error BP: {PlBP}')
-            print(f'Error BPOSD: {PlBPOSD} with average time {time_av_BPOSD}')
-            print(f'Error BPBP: {PlBPBP} with average time {time_av_BPBP}')
+            print(f'Error BPOSD: {PlBPOSD} with average time {time_av_BPOSD} and max time {time_max_BPOSD}')
+            print(f'Error BPBP: {PlBPBP} with average time {time_av_BPBP} and max time {time_max_BPOTF}')
             
             # f.write(f'Distance: {distance} and physical error: {p}\n')
             # f.write('-------------------------------------------------\n')
