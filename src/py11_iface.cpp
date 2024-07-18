@@ -12,5 +12,6 @@ PYBIND11_MODULE(BPOTF, BPOTF) {
    py::class_<OBPOTF>(BPOTF,"OBPOTF")
       .def(py::init<py::object const &, float const &>())
       .def("print_object", &OBPOTF::print_object)
+      .def("otf_uf", py::overload_cast<py::array_t<double, C_FMT> const &>(&OBPOTF::otf_uf))
       .def("decode", &OBPOTF::decode);
 }

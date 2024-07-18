@@ -74,6 +74,19 @@ inline static std::span<T> toSpan2D(py::array_t<T, F_FMT> const & passthrough)
 	return passthroughSpan;
 }
 
+template<typename T>
+inline static std::span<T> toSpan1D(py::array_t<T, C_FMT> const & passthrough)
+{
+	py::buffer_info passthroughBuf = passthrough.request();
+	if (passthroughBuf.ndim != 1) {
+		throw std::runtime_error("Error. Number of dimensions must be 1");
+	}
+	uint64_t length = passthroughBuf.shape[0];
+	T* passthroughPtr = static_cast<T*>(passthroughBuf.ptr);
+	std::span<T> passthroughSpan(passthroughPtr, length);
+	return passthroughSpan;
+}
+
 /***********************************************************************************************************************
  * CLASS METHODS
  **********************************************************************************************************************/
@@ -214,7 +227,7 @@ py::array_t<uint8_t> OBPOTF::decode(py::array_t<uint8_t, C_FMT> syndrome)
    {
       std::vector<double> llrs = m_po_primary_bp->log_prob_ratios;
 
-      std::vector<uint64_t> columns_chosen = this->koh_v2_uf(llrs);
+      std::vector<uint64_t> columns_chosen = this->otf_uf(llrs);
 
       std::vector<double> updated_probs(m_u64_pcm_cols, 0.0);
       uint64_t u64_col_chosen_sz = columns_chosen.size();
@@ -261,7 +274,25 @@ std::vector<uint64_t *> OBPOTF::sort_indexes_nc(std::vector<double> const & llrs
    return idx;
 }
 
-std::vector<uint64_t> OBPOTF::koh_v2_classical_uf(std::vector<double> const & llrs)
+std::vector<uint64_t *> OBPOTF::sort_indexes_nc(std::span<double> const & llrs) 
+{
+   std::vector<uint64_t *> idx(m_au64_index_array.size());
+
+   uint64_t u64_idx_sz = idx.size();
+   for (uint64_t u64_idx = 0U; u64_idx < u64_idx_sz; ++u64_idx)
+      idx[u64_idx] = m_au64_index_array.data() + u64_idx;
+
+   std::sort(idx.begin(), idx.end(), 
+               [&llrs](uint64_t * i1, uint64_t * i2) 
+               {
+                  return std::less<double>{}(llrs[*i1], llrs[*i2]);
+               }
+            );
+
+   return idx;
+}
+
+std::vector<uint64_t> OBPOTF::otf_classical_uf(std::vector<double> const & llrs)
 {
    uint16_t const & hog_rows = m_po_csc_mat->get_row_num();
    uint64_t const & hog_cols = m_u64_pcm_cols;
@@ -304,7 +335,7 @@ std::vector<uint64_t> OBPOTF::koh_v2_classical_uf(std::vector<double> const & ll
    return columns_chosen;
 }
 
-std::vector<uint64_t> OBPOTF::koh_v2_uf(std::vector<double> const & llrs)
+std::vector<uint64_t> OBPOTF::otf_uf(std::vector<double> const & llrs)
 {
    uint16_t const & csc_rows = m_po_csc_mat->get_row_num(); // Already accounts for virtual checks
    uint64_t const & csc_cols = m_po_csc_mat->get_col_num();
@@ -368,6 +399,73 @@ std::vector<uint64_t> OBPOTF::koh_v2_uf(std::vector<double> const & llrs)
    }
 
    return columns_chosen;
+}
+
+py::array_t<uint64_t> OBPOTF::otf_uf(py::array_t<double, C_FMT> const & llrs)
+{
+   uint16_t const & csc_rows = m_po_csc_mat->get_row_num(); // Already accounts for virtual checks
+   uint64_t const & csc_cols = m_po_csc_mat->get_col_num();
+   
+   std::vector<uint64_t> columns_chosen;
+   columns_chosen.reserve(csc_cols);
+
+   std::span<double> llrs_sp = toSpan1D(llrs);
+   std::vector<uint64_t *> sorted_idxs = this->sort_indexes_nc(llrs_sp);
+
+   DisjSet clstr_set = DisjSet(csc_rows);
+
+   uint64_t u64_sorted_idxs_sz = sorted_idxs.size();
+   for (uint64_t col_idx = 0UL; col_idx < u64_sorted_idxs_sz; ++col_idx)
+   {
+      uint64_t effective_col_idx = *(sorted_idxs[col_idx]);
+      std::span<uint64_t> column_sp = m_po_csc_mat->get_col_row_idxs_fast(effective_col_idx);
+      
+      std::vector<uint8_t> checker(csc_rows, 0);
+      std::vector<int> depths = {0, -1, 0};
+      bool boolean_condition = true;
+
+      uint64_t u64_col_sp_sz = column_sp.size();
+      for (uint64_t nt_elem_idx = 0UL; nt_elem_idx < u64_col_sp_sz; ++nt_elem_idx)
+      {
+         int elem_root = clstr_set.find(column_sp[nt_elem_idx]);
+         int elem_depth = clstr_set.get_rank(elem_root);
+
+         if (checker[elem_root] == 1U)
+         {
+            boolean_condition = false;
+            break;
+         }
+         checker[elem_root] = 1U;
+
+         if (elem_depth > depths[1])
+         {
+            depths = {elem_root, elem_depth, 0};
+         }
+         if (elem_depth == depths[1])
+         {
+            depths[2] = 1;
+         }
+      }
+
+      if (boolean_condition == true)
+      {
+         uint64_t u64_checker_sz = checker.size();
+         for(uint64_t elem = 0UL; elem < u64_checker_sz; ++elem)
+         {
+            if (checker[elem] == 1U)
+               clstr_set.set_parent(elem, depths[0]);
+         }
+         columns_chosen.push_back(effective_col_idx);
+         if (depths[2] == 1)
+         {
+            clstr_set.increase_rank(depths[0]);
+         }
+         // if (columns_chosen.size() == rank)
+         //    break;
+      }
+   }
+
+   return as_pyarray(std::move(columns_chosen));
 }
 
 OBPOTF::~OBPOTF(void)

@@ -49,13 +49,14 @@ class OBPOTF
    std::vector<uint64_t> m_au64_index_array; // Array that holds indexes from 0 to m_u64_pcm_cols-1 to be sorted
 
    private:
-   std::vector<uint64_t> koh_v2_classical_uf(std::vector<double> const & llrs);
+   std::vector<uint64_t> otf_classical_uf(std::vector<double> const & llrs);
 
-   std::vector<uint64_t> koh_v2_uf(std::vector<double> const & llrs);
+   std::vector<uint64_t> otf_uf(std::vector<double> const & llrs);
 
    std::vector<uint64_t> sort_indexes(py::array_t<double> const & llrs);
 
    std::vector<uint64_t *> sort_indexes_nc(std::vector<double> const & llrs);
+   std::vector<uint64_t *> sort_indexes_nc(std::span<double> const & llrs);
 
    public:
    /********************************************************************************************************************
@@ -80,6 +81,8 @@ class OBPOTF
     * @brief Destroy the OBPOTF object.
     *******************************************************************************************************************/
    ~OBPOTF();
+
+   py::array_t<uint64_t> otf_uf(py::array_t<double, C_FMT> const & llrs);
 
    py::array_t<uint8_t> decode(py::array_t<uint8_t, C_FMT> syndrome);
 
