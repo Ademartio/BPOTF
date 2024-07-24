@@ -48,6 +48,13 @@ class OBPOTF
 
    std::vector<uint64_t> m_au64_index_array; // Array that holds indexes from 0 to m_u64_pcm_cols-1 to be sorted
 
+   py::array_t<uint8_t> (OBPOTF::*m_pf_decoding_func)(py::array_t<uint8_t, C_FMT> const &);
+   public:
+   typedef enum 
+   {
+      E_GENERIC   = 0,  // Default mode
+      E_CLN       = 1   // Circuit-level noise codes
+   } ECodeType_t;
    private:
    std::vector<uint64_t> otf_classical_uf(std::vector<double> const & llrs);
 
@@ -58,6 +65,9 @@ class OBPOTF
    std::vector<uint64_t *> sort_indexes_nc(std::vector<double> const & llrs);
    std::vector<uint64_t *> sort_indexes_nc(std::span<double> const & llrs);
 
+   py::array_t<uint8_t> generic_decode(py::array_t<uint8_t, C_FMT> const & syndrome);
+
+   py::array_t<uint8_t> cln_decode(py::array_t<uint8_t, C_FMT> const & syndrome);
    public:
    /********************************************************************************************************************
     * @brief Construct a new OBPOTF object from the input values.
@@ -66,7 +76,7 @@ class OBPOTF
     *                avoid copying the matrix.
     * @param p[in]   Phisical error to initialize the bp_decoder.
     *******************************************************************************************************************/
-   OBPOTF(py::object const & pcm, float const & p);
+   OBPOTF(py::object const & pcm, float const & p, ECodeType_t const code_type = E_GENERIC);
 
    void OBPOTF_init_from_numpy(py::array_t<uint8_t, F_FMT> const & pcm);
    
@@ -84,7 +94,7 @@ class OBPOTF
 
    py::array_t<uint64_t> otf_uf(py::array_t<double, C_FMT> const & llrs);
 
-   py::array_t<uint8_t> decode(py::array_t<uint8_t, C_FMT> syndrome);
+   py::array_t<uint8_t> decode(py::array_t<uint8_t, C_FMT> const & syndrome);
 
    /********************************************************************************************************************
     * @brief Prints the object's member. Developing purposes and testing.

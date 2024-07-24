@@ -90,7 +90,7 @@ inline static std::span<T> toSpan1D(py::array_t<T, C_FMT> const & passthrough)
 /***********************************************************************************************************************
  * CLASS METHODS
  **********************************************************************************************************************/
-OBPOTF::OBPOTF(py::object const & au8_pcm, float const & p)
+OBPOTF::OBPOTF(py::object const & au8_pcm, float const & p, ECodeType_t const code_type)
    :m_p(p)
 {
    if (true == py::isinstance<py::array_t<uint8_t>>(au8_pcm))
@@ -105,6 +105,21 @@ OBPOTF::OBPOTF(py::object const & au8_pcm, float const & p)
    {
       throw std::runtime_error("Input type not supported! Input type must be ndarray of uint8 or"
                                "scipy.sparse.csc_matrix...");
+   }
+
+   if (code_type == E_GENERIC)
+   {
+      this->m_pf_decoding_func = &OBPOTF::generic_decode;
+   }
+   else if (code_type == E_CLN)
+   {
+      this->m_pf_decoding_func = &OBPOTF::cln_decode;
+   }
+   else
+   {
+      throw std::runtime_error("ERROR! Introduced code type is not supported!\n"
+                                 "If you would like to include support submit a PR or open an "
+                                 "issue on the repository. Thanks!");
    }
 }
 
@@ -218,7 +233,13 @@ void OBPOTF::print_object(void)
 
 }
 
-py::array_t<uint8_t> OBPOTF::decode(py::array_t<uint8_t, C_FMT> syndrome)
+py::array_t<uint8_t> OBPOTF::decode(py::array_t<uint8_t, C_FMT> const & syndrome)
+{
+   return (this->*m_pf_decoding_func)(syndrome);
+   // return std::invoke(this->m_pf_decoding_func, this, syndrome);
+}
+
+py::array_t<uint8_t> OBPOTF::generic_decode(py::array_t<uint8_t, C_FMT> const & syndrome)
 {
    std::vector<uint8_t> u8_syndrome(syndrome.data(), syndrome.data() + syndrome.size());
    std::vector<uint8_t> u8_recovered_err = m_po_primary_bp->decode(u8_syndrome);
@@ -237,6 +258,13 @@ py::array_t<uint8_t> OBPOTF::decode(py::array_t<uint8_t, C_FMT> syndrome)
       m_po_secondary_bp->channel_probabilities = updated_probs;
       u8_recovered_err = m_po_secondary_bp->decode(u8_syndrome);
    }
+
+   return as_pyarray(std::move(u8_recovered_err));
+}
+
+py::array_t<uint8_t> OBPOTF::cln_decode(py::array_t<uint8_t, C_FMT> const & syndrome)
+{
+   std::vector<uint8_t> u8_recovered_err(m_u64_pcm_cols, 0);
 
    return as_pyarray(std::move(u8_recovered_err));
 }
