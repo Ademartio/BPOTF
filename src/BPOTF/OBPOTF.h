@@ -35,6 +35,9 @@ namespace py = pybind11;
 
 class OBPOTF
 {
+   /******************************************************************************************************************* 
+    * PRIVATE MEMBER VARIABLE DECLARATION 
+    *******************************************************************************************************************/
    private:
    float const m_p;  // Error probabilities.
    uint64_t m_u64_pcm_rows;   // Parity check matrix number of rows.
@@ -44,17 +47,26 @@ class OBPOTF
 
    ldpc::bp::BpSparse * m_po_bpsparse = nullptr; // Pointer to the pcm in format for BpDecoder object
    ldpc::bp::BpDecoder * m_po_primary_bp = nullptr; // Pointer to primary BP decoder object.
-   ldpc::bp::BpDecoder * m_po_secondary_bp = nullptr; // Pointer to secondary BP decoder in case the first one fails and Kruskal is needed.
+   ldpc::bp::BpDecoder * m_po_secondary_bp = nullptr; // Pointer to secondary BP decoder in case the first 
+                                                      // one fails and Kruskal is needed.
 
    std::vector<uint64_t> m_au64_index_array; // Array that holds indexes from 0 to m_u64_pcm_cols-1 to be sorted
 
    py::array_t<uint8_t> (OBPOTF::*m_pf_decoding_func)(py::array_t<uint8_t, C_FMT> const &);
+
+   /********************************************************************************************************************
+    * PUBLIC MEMBER VARIABLE DECLARATION 
+    *******************************************************************************************************************/
    public:
    typedef enum 
    {
       E_GENERIC   = 0,  // Default mode
       E_CLN       = 1   // Circuit-level noise codes
    } ECodeType_t;
+
+   /********************************************************************************************************************
+    * PRIVATE CLASS METHOD DECLARATION
+    *******************************************************************************************************************/
    private:
    std::vector<uint64_t> otf_classical_uf(std::vector<double> const & llrs);
 
@@ -68,6 +80,10 @@ class OBPOTF
    py::array_t<uint8_t> generic_decode(py::array_t<uint8_t, C_FMT> const & syndrome);
 
    py::array_t<uint8_t> cln_decode(py::array_t<uint8_t, C_FMT> const & syndrome);
+
+   /********************************************************************************************************************
+    * PUBLIC CLASS METHOD DECLARATION
+    *******************************************************************************************************************/
    public:
    /********************************************************************************************************************
     * @brief Construct a new OBPOTF object from the input values.
