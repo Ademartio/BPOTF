@@ -69,13 +69,13 @@ class OBPOTF
 
    /********************************************************************************************************************
     * @typedef ECodeType_t
-    * @brief   This typedef is an enumeration type that indicates the different codes that are supported for 
+    * @brief   This typedef is an enumeration type that indicates the different error sources that are supported for 
     *          decodification.
     *******************************************************************************************************************/
    typedef enum 
    {
       E_GENERIC   = 0,  //!< Default mode
-      E_CLN       = 1   //!< Circuit-level noise codes
+      E_CLN       = 1   //!< Circuit-level noise 
    } ECodeType_t;
 
    /********************************************************************************************************************
@@ -139,7 +139,7 @@ class OBPOTF
    py::array_t<uint8_t> generic_decode(py::array_t<uint8_t, C_FMT> const & syndrome);
 
    /********************************************************************************************************************
-    * @brief This routine executes the decoding process for circuit-level noise type of codes. It is registered as a 
+    * @brief This routine executes the decoding process for circuit-level noise type of errors. It is registered as a 
     *        callback in the member variable m_pf_decoding_func when the object is created if the enumeration type is
     *        set to E_CLN.
     * 
@@ -159,7 +159,7 @@ class OBPOTF
     * 
     * @param pcm[in]       Parity check matrix. It is passed as a py::object for speed and avoid copying the matrix.
     * @param p[in]         Phisical error to initialize the bp_decoder.
-    * @param code_type[in] Type of the codes the error is generated from.
+    * @param code_type[in] Type of the error source.
     *******************************************************************************************************************/
    OBPOTF(py::object const & pcm, float const & p, ECodeType_t const code_type = E_GENERIC);
 
