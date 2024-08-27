@@ -67,6 +67,7 @@
     <li><a href="#license">License</a></li>
     <li><a href="#contact">Contact</a></li>
     <li><a href="#acknowledgments">Acknowledgments</a></li>
+    <li><a href="#attribution">Attribution</a></li>
   </ol>
 </details>
 
@@ -75,7 +76,7 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-This project implements a new quantum decoder method which we have named as *Belief Propagation Ordered Tanner Forest* (BPOTF). This method is based on the Kruskal's algorithm to find a minimum spanning forest and it uses the Disjoint-Set data structure for the implementation.
+This project implements a new decodig method for quantum low density parity check codes which we have named *Belief Propagation Ordered Tanner Forest* (BPOTF). The method is based on an slighlty modified Kruskal's algorithm to find the spanning forest associated to the columns of a PCM with highest a posteriori probability coming from running belief propagation and it uses the Disjoint-Set data structure for the implementation.
 
 <!-- Add more info here... -->
 
@@ -254,7 +255,7 @@ Distributed under the MIT License. See `LICENSE` for more information.
 <!-- CONTACT -->
 ## Contact
 
-* _Antonio de Martì_ - [@ton_demarti](https://x.com/ton_demarti) - ademartio@unav.es
+* _Antonio de Martì_ - [@ton_demarti](https://x.com/ton_demarti) - toni.demarti@gmail.com
 * _Josu Etxezarreta_ - [@katutxakur](https://x.com/katutxakur) - jetxezarreta@unav.es
 * _Imanol Etxezarreta_ - ietxezarretam@gmail.com
 
@@ -269,6 +270,7 @@ Project Link: [https://github.com/Ademartio/BPOTF](https://github.com/Ademartio/
 ## Acknowledgments
 
 Thanks to the following amazing projects and webs for the help, tools and information! Do not forget to visit and star/like their work also!
+ARE SOME OF THESE DEPENDENCIES?
 
 * [Pybind11](https://github.com/pybind/pybind11/tree/master)
 * [LDPC python library](https://github.com/quantumgizmos/ldpc.git) - Joschka Roffe
@@ -276,6 +278,10 @@ Thanks to the following amazing projects and webs for the help, tools and inform
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
+<!-- ATTRIBUTION -->
+## Attribution
+When using the OTF post-processing decoding algorithm or the two stage BP decoder please cite our paper:
+ADD PAPER WHEN WE SUBMIT TO ARXIV
 
 
 <!-- MARKDOWN LINKS & IMAGES -->
