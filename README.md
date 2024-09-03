@@ -218,6 +218,9 @@ _bpotf.decode(syndrome.astype(np.int32))
 - [x] Add a License to the repo.
 - [ ] Add CSC support.
 - [x] Add Pip supported installation method.
+- [ ] Add function to calculate an sparsified detector error model and transfer matrix.
+- [ ] Add function to map soft information from detector error model to sparsified detector matrix.
+- [ ] Add BP+BP decoding protocol for circuit-level noise.
 
 See the [open issues](https://github.com/Ademartio/BPOTF/issues) for a full list of proposed features (and known issues).
 
@@ -258,6 +261,7 @@ Distributed under the MIT License. See `LICENSE` for more information.
 * _Antonio de Martì_ - [@ton_demarti](https://x.com/ton_demarti) - toni.demarti@gmail.com
 * _Josu Etxezarreta_ - [@katutxakur](https://x.com/katutxakur) - jetxezarreta@unav.es
 * _Imanol Etxezarreta_ - ietxezarretam@gmail.com
+* _Joschka Roffe_ - [@quantumgizmos](https://x.com/quantumgizmos) - joschka@roffe.eu
 
 
 Project Link: [https://github.com/Ademartio/BPOTF](https://github.com/Ademartio/BPOTF)
@@ -270,7 +274,6 @@ Project Link: [https://github.com/Ademartio/BPOTF](https://github.com/Ademartio/
 ## Acknowledgments
 
 Thanks to the following amazing projects and webs for the help, tools and information! Do not forget to visit and star/like their work also!
-ARE SOME OF THESE DEPENDENCIES?
 
 * [Pybind11](https://github.com/pybind/pybind11/tree/master)
 * [LDPC python library](https://github.com/quantumgizmos/ldpc.git) - Joschka Roffe
@@ -282,6 +285,8 @@ ARE SOME OF THESE DEPENDENCIES?
 ## Attribution
 When using the OTF post-processing decoding algorithm or the two stage BP decoder please cite our paper:
 ADD PAPER WHEN WE SUBMIT TO ARXIV
+
+
 
 
 <!-- MARKDOWN LINKS & IMAGES -->
