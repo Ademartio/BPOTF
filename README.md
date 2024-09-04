@@ -284,7 +284,19 @@ Thanks to the following amazing projects and webs for the help, tools and inform
 <!-- ATTRIBUTION -->
 ## Attribution
 When using the OTF post-processing decoding algorithm or the two stage BP decoder please cite our paper:
-ADD PAPER WHEN WE SUBMIT TO ARXIV
+```
+@article{bpotf_2024,
+    author = "{deMarti iOlius}, Antonio and {Etxezarreta Martinez}, Imanol and Roffe, Joschka and {Etxezarreta Martinez}, Josu",
+    title = "{An almost-linear time decoding algorithm for quantum LDPC codes under circuit-level noise}",
+    journal = {arXiv},
+    pages = {2409.01440},
+    archivePrefix = "arXiv",
+    primaryClass = "quant-ph",
+    month = sep,
+    year = {2024},
+    url ={https://arxiv.org/abs/2409.01440}
+}
+```
 
 
 
