@@ -6,15 +6,31 @@ import stim
 from beliefmatching import detector_error_model_to_check_matrices
 from scipy.io import savemat
 import scipy.io as sio
-conts = sio.loadmat('transferMatrixTon.mat')
+from itertools import combinations
+
+
+# Propagation of information
+
+
+
 
 # This class will attempt to correct BB codes under circuit-level noise
 class UFCLN:
     def __init__(self,
                  dem : stim.DetectorErrorModel,
-                 allow_undecomposed_hyperedges: bool = True
+                 allow_undecomposed_hyperedges: bool = True,
+                 d : int = 6
                  ):
         
+        assert d in [6,9,12]
+        
+        if d == 6: # l = 6, m = 6
+            conts = sio.loadmat('transfermatrices/transferMatrixcodel6m6.mat')
+        elif d == 9:# l = 9, m = 6
+            conts = sio.loadmat('transfermatrices/transferMatrixcodel9m6.mat')
+        else: # l = 12, m = 6
+            conts = sio.loadmat('transfermatrices/transferMatrixcodel12m6.mat')
+            
         bm = detector_error_model_to_check_matrices(dem, allow_undecomposed_hyperedges)
         
         self.H = bm.check_matrix.toarray()
@@ -30,45 +46,42 @@ class UFCLN:
         self.H_phen = self.H[:,np.where(columns_to_consider==1)[0]]
         self.obs_phen = self.obs[:,np.where(columns_to_consider==1)[0]]
         
-        # Post processing decoding:
-        
-        # p = 0.001
-        # bposd = bposd_decoder(
-        #     self.H_phen,
-        #     error_rate = p,
-        #     max_iter = 20,
-        #     osd_method = "osd_0"
-        # )
-        # self.transf_M = np.zeros((self.H_phen.shape[1],self.H.shape[1]))
-        
-        # for column in range(self.H.shape[1]):
-        #     # print(f'Número columna en HCLN: {column}')
-        #     syndrome = self.H[:,column]
-        #     column_to_add = bposd.decode(syndrome)
-        #     # print(f'Peso columna: {np.sum(column_to_add)}\n')
-        #     # TODO quizás siguiente linea esté mal
-        #     self.transf_M[:,column] = column_to_add
+
         self.transf_M = conts['transfMat']
-        self.priors_phen = self.transf_M @ self.priors
+        
+        max_numb_cols = 0
+        for row in range(self.transf_M.shape[0]):
+            num_cols = len(np.where(self.transf_M[row,:]==1)[0])
+            if num_cols  > max_numb_cols:
+                max_numb_cols = num_cols
+                
+        self.transf_M_red = np.full((self.transf_M.shape[0], max_numb_cols), -1)
+        
+        for row in range(self.transf_M.shape[0]):
+            num_cols = np.where(self.transf_M[row,:]==1)[0]
+            self.transf_M_red[row, :len(num_cols)] = num_cols
+        
+        
+        # self.priors_phen = self.transf_M @ self.priors
+        self.priors_phen = self.propagation(self.priors)
         self.rows, self.columns = self.H_phen.shape
-        savemat("gevolvetest.mat", {'H': self.H, 'obs' : self.obs,'H_phen' : self.H_phen, 'obs_phen' : self.obs_phen})
         
         
         self._bpd = bp_decoder(
             self.H,
             channel_probs = self.priors,
-            max_iter = 100
+            max_iter = 30
         )
         # Para hacer el segundo BP, en la matriz de los edges y, futúramente fenomenológica
         self._bpd2 = bp_decoder(
             self.H_phen,
-            channel_probs = self.transf_M @ self.priors,
+            channel_probs = self.priors_phen,
             max_iter = 100
         )
 
         self._bpd3 = bp_decoder(
             self.H_phen,
-            channel_probs = self.transf_M @ self.priors,
+            channel_probs = self.priors_phen,
             max_iter = 100
         )
         
@@ -96,7 +109,26 @@ class UFCLN:
         cluster =  np.zeros((self.rows, 2), dtype=int)
         cluster[:, 0] = np.arange(self.rows)
         return cluster
-    
+
+    def propagation(self, priors):
+        p_ph = np.zeros(self.transf_M_red.shape[0])
+        for row in range(len(p_ph)):
+            columns = self.transf_M_red[row,:]
+            try:
+                end_index = np.where(columns[:] == -1)[0][0]
+            except Exception:
+                # if -1 is not found
+                end_index = len(columns)
+            # primer componente de error
+            columns = columns[:end_index]
+            pphen_prod = 1
+            for i, col in enumerate(columns):
+                # Exclude the current element from the product calculation
+                pphen_prod *= (1-(2*priors[col]))
+            p_ph[row] = .5*(1-pphen_prod)
+        return p_ph
+
+
     
     def sort_matrix(self, llrs):
         sorted_indices = np.argsort(llrs)[::-1]
@@ -182,12 +214,15 @@ class UFCLN:
         if self._bpd.converge:
             recovered_error = (self.obs @ recovered_error) % 2
             return recovered_error, 0
-        print('BP2')
+        # print('BP2')
         # Si no converge, nos quedamos con las llrs.
         llrs = self._bpd.log_prob_ratios
         ps_h = 1 / (1 + np.exp(llrs))
         eps = 1e-14
-        ps_e = self.transf_M @ ps_h        
+        
+        # Este cambio, en vez de hacerlo así, vamos a considerar una nueva manera de hacer 
+        # ps_e = self.transf_M @ ps_h      
+        ps_e = self.propagation(ps_h)  
         ps_e[ps_e > 1 - eps] = 1 - eps
         ps_e[ps_e < eps] = eps
         
@@ -200,7 +235,7 @@ class UFCLN:
         if not self._bpd2.converge:
             # print('NO CONVERGENCE')
             # return np.zeros(self.obs.shape[0]), 0
-            print('OTF \n')
+            # print('OTF \n')
             llrs2 = self._bpd2.log_prob_ratios
             ps_e = 1 / (1 + np.exp(llrs2))
             eps = 1e-14      
@@ -208,11 +243,11 @@ class UFCLN:
             ps_e[ps_e < eps] = eps
             
             sorted_indices = self.sort_matrix(ps_e)
-            a = time.perf_counter()
+            # a = time.perf_counter()
             # Nos quedamos con las columnas linearmente independientes.
             columns_chosen = self.Kruskal_hypergraph(sorted_indices)
-            b = time.perf_counter()
-            average_time = b-a
+            # b = time.perf_counter()
+            # average_time = b-a
             
             updated_probs = np.full(self.columns, 1e-9)
             updated_probs[columns_chosen] = ps_e[columns_chosen]
@@ -222,10 +257,10 @@ class UFCLN:
             # updated_probs[columns_chosen] = self.priors_phen[columns_chosen].flatten()
             self._bpd3.update_channel_probs(updated_probs)
             second_recovered_error = self._bpd3.decode(syndrome)
-            if not self._bpd3.converge:
-                print('Rare error')
+            # if not self._bpd3.converge:
+            #     print('Rare error')
             second_recovered_error = (self.obs_phen @ second_recovered_error) % 2
-            return second_recovered_error, average_time
+            return second_recovered_error, 0
         # else: print('Yes convergence')
         second_recovered_error = (self.obs_phen @ second_recovered_error) % 2
         # if not np.all(error_edge == second_recovered_error):
