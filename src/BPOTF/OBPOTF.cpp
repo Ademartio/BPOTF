@@ -11,21 +11,23 @@
  * 
  **********************************************************************************************************************/
 
+// std includes
 #include <numeric>
 #include <span>
 #include <iostream>
 
+// Windows build includes
 #if defined(_MSC_VER)
 #include <BaseTsd.h>
 typedef SSIZE_T ssize_t;
 #endif
 
+// Custom includes
 #include "OBPOTF.h"
 #include "DisjointSet/DisjointSet.h"
 #include "CSC/OCSC.h"
 
 using namespace py::literals;
-
 
 /***********************************************************************************************************************
  * FILE GLOBAL VARIABLES
@@ -36,9 +38,16 @@ static py::object vf_scipy_csc_type = py::module_::import("scipy.sparse").attr("
 /***********************************************************************************************************************
  * Helper functions
  **********************************************************************************************************************/
-// helper function to avoid making a copy when returning a py::array_t
-// author: https://github.com/YannickJadoul
-// source: https://github.com/pybind/pybind11/issues/1042#issuecomment-642215028
+/***********************************************************************************************************************
+ * @brief helper function to avoid making a copy when returning a py::array_t
+ * 
+ *    author: https://github.com/YannickJadoul
+ *    source: https://github.com/pybind/pybind11/issues/1042#issuecomment-642215028
+ * 
+ * @tparam Sequence::value_type 
+ * @param seq[in]    input sequence to return as py::array.
+ * @return py::array_t<typename Sequence::value_type> 
+ **********************************************************************************************************************/
 template <typename Sequence>
 inline static py::array_t<typename Sequence::value_type> as_pyarray(Sequence &&seq) {
    auto size = seq.size();
@@ -55,12 +64,13 @@ inline static py::array_t<typename Sequence::value_type> as_pyarray(Sequence &&s
    return py::array(size, data, capsule);
 }
 
-/**
- * \brief Returns span<T> from py:array_T<T>. Efficient as zero-copy.
- * \tparam T Type.
- * \param passthrough Numpy array.
- * \return Span<T> that with a clean and safe reference to contents of Numpy array.
- */
+/***********************************************************************************************************************
+ * @brief Returns span<T> from py:array_T<T>. Efficient as zero-copy. Only works with py::array_t with 2 dimensions.
+ * 
+ * @tparam T Type
+ * @param passthrough[in] Numpy array to get as span.
+ * @return std::span<T> clean and safe reference to contents of Numpy array.
+ **********************************************************************************************************************/
 template<typename T>
 inline static std::span<T> toSpan2D(py::array_t<T, F_FMT> const & passthrough)
 {
@@ -74,6 +84,13 @@ inline static std::span<T> toSpan2D(py::array_t<T, F_FMT> const & passthrough)
 	return passthroughSpan;
 }
 
+/***********************************************************************************************************************
+ * @brief Returns span<T> from py:array_T<T>. Efficient as zero-copy. Only works with py::array_t with 1 dimension.
+ * 
+ * @tparam T Type
+ * @param passthrough[in] Numpy array to get as span.
+ * @return std::span<T> clean and safe reference to contents of Numpy array.
+ **********************************************************************************************************************/
 template<typename T>
 inline static std::span<T> toSpan1D(py::array_t<T, C_FMT> const & passthrough)
 {
@@ -93,6 +110,7 @@ inline static std::span<T> toSpan1D(py::array_t<T, C_FMT> const & passthrough)
 OBPOTF::OBPOTF(py::object const & au8_pcm, float const & p, ECodeType_t const code_type)
    :m_p(p)
 {
+   // Initialize depending the py::object instance
    if (true == py::isinstance<py::array_t<uint8_t>>(au8_pcm))
    {
       this->OBPOTF_init_from_numpy(au8_pcm);
@@ -107,6 +125,7 @@ OBPOTF::OBPOTF(py::object const & au8_pcm, float const & p, ECodeType_t const co
                                "scipy.sparse.csc_matrix...");
    }
 
+   // Register decoding callback.
    if (code_type == E_GENERIC)
    {
       this->m_pf_decoding_func = &OBPOTF::generic_decode;
@@ -125,6 +144,7 @@ OBPOTF::OBPOTF(py::object const & au8_pcm, float const & p, ECodeType_t const co
 
 void OBPOTF::OBPOTF_init_from_scipy_csc(py::object const & au8_pcm)
 {
+   // Convert scipy.sparse.csc_matrix to ndarray of uint8_t
    py::object dense_mat = au8_pcm.attr("toarray")();
    py::array_t<uint8_t, F_FMT> au8_pcm_pyarr = dense_mat.attr("astype")("uint8");
 
@@ -208,6 +228,9 @@ void OBPOTF::OBPOTF_init_from_numpy(py::array_t<uint8_t, F_FMT> const & au8_pcm)
    }
 }
 
+/*
+ * Debug purposes, eventually could be removed or improved...
+ */
 void OBPOTF::print_object(void)
 {
    std::cout << "m_u64_pcm_rows: " << m_u64_pcm_rows << std::endl;
@@ -236,6 +259,7 @@ void OBPOTF::print_object(void)
 py::array_t<uint8_t> OBPOTF::decode(py::array_t<uint8_t, C_FMT> const & syndrome)
 {
    return (this->*m_pf_decoding_func)(syndrome);
+   // Below method is more "safe" due to readability... both work the same.
    // return std::invoke(this->m_pf_decoding_func, this, syndrome);
 }
 
@@ -262,6 +286,7 @@ py::array_t<uint8_t> OBPOTF::generic_decode(py::array_t<uint8_t, C_FMT> const & 
    return as_pyarray(std::move(u8_recovered_err));
 }
 
+// TODO: implement cln decoding.
 py::array_t<uint8_t> OBPOTF::cln_decode(py::array_t<uint8_t, C_FMT> const & syndrome)
 {
    std::vector<uint8_t> u8_recovered_err(m_u64_pcm_cols, 0);
@@ -292,6 +317,7 @@ std::vector<uint64_t *> OBPOTF::sort_indexes_nc(std::vector<double> const & llrs
    for (uint64_t u64_idx = 0U; u64_idx < u64_idx_sz; ++u64_idx)
       idx[u64_idx] = m_au64_index_array.data() + u64_idx;
 
+   // Using std::sort assures a worst-case scenario of time complexity O(n*log(n))
    std::sort(idx.begin(), idx.end(), 
                [&llrs](uint64_t * i1, uint64_t * i2) 
                {
@@ -310,6 +336,7 @@ std::vector<uint64_t *> OBPOTF::sort_indexes_nc(std::span<double> const & llrs)
    for (uint64_t u64_idx = 0U; u64_idx < u64_idx_sz; ++u64_idx)
       idx[u64_idx] = m_au64_index_array.data() + u64_idx;
 
+   // Using std::sort assures a worst-case scenario of time complexity O(n*log(n))
    std::sort(idx.begin(), idx.end(), 
                [&llrs](uint64_t * i1, uint64_t * i2) 
                {
