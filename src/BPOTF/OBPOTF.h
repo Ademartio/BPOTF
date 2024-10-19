@@ -46,8 +46,12 @@ class OBPOTF
    //! Parity check matrix number of columns.
    uint64_t m_u64_pcm_cols;
 
+   // TODO: Rename to specify explicitly that it is the pcm matrix
    //! Matrix in Compressed-Sparse-Column format.
    OCSC * m_po_csc_mat = nullptr;
+
+   //! Transfer matrix in case a DEM is provided.
+   OCSC * m_po_transfer_csc_mat = nullptr;
 
    //! Pointer to the pcm in format for BpDecoder object
    ldpc::bp::BpSparse * m_po_bpsparse = nullptr;
@@ -68,15 +72,17 @@ class OBPOTF
    public:
 
    /********************************************************************************************************************
-    * @typedef ECodeType_t
-    * @brief   This typedef is an enumeration type that indicates the different error sources that are supported for 
-    *          decodification.
+    * @typedef ENoiseType_t
+    * @brief   This typedef holds the different noise models that can be passed to the decoder. Depending on the type
+    *          passed, the decoder could also use (by input argument or trying to obtaining it) a transference matrix
+    *          to simplify the decoding procedure.
     *******************************************************************************************************************/
    typedef enum 
    {
-      E_GENERIC   = 0,  //!< Default mode
-      E_CLN       = 1   //!< Circuit-level noise 
-   } ECodeType_t;
+      E_CC     = 0,  //!< Code Capacity (Default mode).
+      E_PHEN   = 1,  //!< Phenomenological.
+      E_CLN    = 2   //!< Circuit-level noise.
+   } ENoiseType_t;
 
    /********************************************************************************************************************
     * PRIVATE CLASS METHOD DECLARATION
@@ -161,7 +167,7 @@ class OBPOTF
     * @param p[in]         Phisical error to initialize the bp_decoder.
     * @param code_type[in] Type of the error source.
     *******************************************************************************************************************/
-   OBPOTF(py::object const & pcm, float const & p, ECodeType_t const code_type = E_GENERIC);
+   OBPOTF(py::object const & pcm, float const & p, ENoiseType_t const code_type, py::object const * const transfer_mat);
 
    /********************************************************************************************************************
     * @brief Sub-routine that is called from the object constructor if it is called with a numpy array. It initialized 

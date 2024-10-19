@@ -107,8 +107,10 @@ inline static std::span<T> toSpan1D(py::array_t<T, C_FMT> const & passthrough)
 /***********************************************************************************************************************
  * CLASS METHODS
  **********************************************************************************************************************/
-OBPOTF::OBPOTF(py::object const & au8_pcm, float const & p, ECodeType_t const code_type)
-   :m_p(p)
+OBPOTF::OBPOTF(py::object const & au8_pcm, float const & p,
+               ENoiseType_t const code_type = E_CC,
+               py::object const * const transfer_mat = nullptr)
+               :m_p(p)
 {
    // Initialize depending the py::object instance
    if (true == py::isinstance<py::array_t<uint8_t>>(au8_pcm))
@@ -126,7 +128,7 @@ OBPOTF::OBPOTF(py::object const & au8_pcm, float const & p, ECodeType_t const co
    }
 
    // Register decoding callback.
-   if (code_type == E_GENERIC)
+   if (code_type == E_CC)
    {
       this->m_pf_decoding_func = &OBPOTF::generic_decode;
    }
